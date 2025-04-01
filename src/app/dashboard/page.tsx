@@ -22,13 +22,16 @@ export default function Dashboard() {
     setIsClient(true);
   }, []);
 
+  const quickGlance = "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
+  const redFlags = "Subscriptions Budget has an upcoming payment that will put the budget under $1";
+  const redPrice = "$50";
   const data = {
-    labels: ['Red', 'Blue', 'Yellow'],
+    labels: ['Disposable Income', 'Budget 1', 'Budget 2'],
     datasets: [
       {
-        label: 'Pie Chart',
-        data: [300, 50, 100],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCD56'],
+        label: 'Income Allocation',
+        data: [1000, 1500, 500],
+        backgroundColor: ['#A0D8F1', '#36A2EB', '#0D9488'],
         hoverOffset: 4,
       },
     ],
@@ -39,12 +42,34 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex space-x-8 p-8">
+    <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column (Pie Chart) */}
       <div className="w-1/2">
-        <h2 className="text-xl font-semibold mb-4">Pie Chart</h2>
+        <div className="flex justify-center pt-3 pb-3">
+            <div className="w-[50%] object-contain">
+            <PieChart data={data} />
+        </div>
+        </div>
         <div className="bg-white p-4 shadow-lg rounded-lg">
-          <PieChart data={data} />
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+            <p className="text-violet-400 flex justify-center">Dashboard</p>
+                <div className="shadow-lg rounded-lg flex">
+                <p className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg">Income</p>
+                <p className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg">Budget</p>
+                <p className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg">Payment</p>                
+                </div>
+            </div>
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+            <p className="text-violet-400 flex justify-center">Quick Glance</p>
+            <p className="text-gray-600 text-sm">{quickGlance}</p>
+            </div>
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+            <p className="text-violet-400 flex justify-center">Red Flags</p>
+            <div className="shadow-lg rounded-lg flex">
+                <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p>
+                <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>                
+                </div>
+            </div>
         </div>
       </div>
 
