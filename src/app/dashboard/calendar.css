@@ -1,0 +1,105 @@
+.react-calendar {
+    border: none;
+    box-shadow: none;
+    background-color: white;
+    width: 90%;
+}
+
+/* Month/Year Navigation Bar */
+
+.react-calendar__navigation {
+    margin-bottom: 1vw;
+}
+
+.react-calendar__navigation__label__labelText {
+    color: #7c8cfd;
+    font-family: var(--font-coustard);
+    font-size: 2vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.react-calendar__navigation__arrow {
+    color: #7c8cfd;
+}
+
+/* Custom Calendar Tiles */
+
+.tile {
+    position: relative;
+    height: 5vw;
+}
+
+.tile-date-number {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+    font-size: 0.7rem;
+}
+
+.tile-content {
+    margin: 10%;
+    color: gray;
+}
+
+/* React Calendar Tiles */
+
+.react-calendar__tile > abbr {
+    /* Date Number */
+    position: relative;
+    display: none;
+}
+
+.react-calendar__tile {
+    color: #7c8cfd;
+    background-color: #fff;
+    border: 0.25px solid rgba(169, 169, 169, 0.5) !important;
+    padding: 0px;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+    /* Days in Neighboring Months */
+    opacity: 0.5;
+    border: 0.25px solid rgba(169, 169, 169, 1) !important;
+}
+
+/* Specific Tiles */
+
+.react-calendar__tile:hover {
+    /* Currently Hovered Tile */
+    background-color: #eeeeee !important;
+}
+
+.react-calendar__tile--active {
+    /* Currently Selected Tile */
+    background-color: #c7dfef !important;
+}
+
+.react-calendar__tile--now {
+    /* Current Day Tile */
+    background-color: #e2e2e2;
+}
+
+.react-calendar__tile--now:hover {
+    /* Current Day Tile  (Hover) */
+    background-color: #cccccc !important;
+}
+
+.react-calendar__tile--active:hover {
+    /* Currently Selected Tile (Hover) */
+    background-color: #b3d5ec !important;
+}
+
+/* Misc Calendar Elements */
+
+.react-calendar__navigation {
+    /* Header containing navigation buttons */
+    background-color: white;
+}
+
+.react-calendar__month-view__weekdays,
+.react-calendar__month-view__days__day--weekend {
+    /* Weekday Bar (Mon, Tues, Wed, ...) */
+    color: #7c8cfd;
+}
