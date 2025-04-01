@@ -8,7 +8,7 @@ const pool = new Pool({
     database: process.env.DB_NAME,
 });
 
-export async function query<T extends QueryResultRow>(text: string, params?: any[]): Promise<QueryResult<T>> {
+export async function query<T extends QueryResultRow>(text: string, params?: unknown[]): Promise<QueryResult<T>> {
     try {
       const result = await pool.query(text, params);
       return result;
