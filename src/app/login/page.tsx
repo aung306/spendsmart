@@ -7,9 +7,9 @@ export default function Login() {
         <Link href="/login"><button className="bg-white text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline">Login</button></Link>
         <Link href="/signup"><button className="bg-[white] text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline">Sign Up</button></Link>
       </div>
-      <div className="flex gap-4 items-start text:left flex-col sm:flex-row font-[family-name:var(--font-comfortaa)]">
+      <Link href="/"><div className="flex gap-4 items-start text:left flex-col sm:flex-row font-[family-name:var(--font-comfortaa)]">
         ALT-F4-LIFE
-      </div>
+      </div></Link>
       <div className="flex flex-col items-center justify-center">
         <div className="mb-8 text-5xl font-[family-name:var(--font-coustard)] text-center">
           Login
