@@ -46,31 +46,33 @@ export async function GET(req: Request) {
   }
 }
 
-// haven't test this yet 
+// creates a new budget using account id, name, and account
+// test using postman and raw JSON body
+// TODO: check the account_id to see if it is valid
 export async function POST(req: Request) {
   try {
-    const { name, amount } = await req.json();
+    const { account_id, name, amount } = await req.json();
 
-    if ( !name || amount === undefined) {
+    if ( !account_id || !name || amount === undefined) {
       return NextResponse.json(
-        { message: 'name, and amount are required.' },
+        { message: 'account_id, name, and amount are required.' },
         { status: 400 } 
       );
     }
 
     const result = await query(
-      `INSERT INTO budget (name, amount) 
+      `INSERT INTO budget (account_id, name, amount) 
        VALUES ($1, $2, $3) RETURNING account_id, name, amount`,
-      [name, amount]
+      [account_id, name, amount]
     );
 
     return NextResponse.json({
-      message: 'Account created successfully',
+      message: 'Budget created successfully',
       account: result.rows[0],
     });
 
   } catch (error) {
-    console.error('Error creating account:', error);
+    console.error('Error creating budget:', error);
     return NextResponse.json(
       { message: 'Database connection failed',
         error: error instanceof Error ? error.message : String(error)},
