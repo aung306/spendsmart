@@ -44,7 +44,7 @@ export default function Dashboard() {
         labels: budgetNames,
         datasets: [
             {
-                label: 'Income Allocation',
+                label: '',
                 data: budgets,
                 backgroundColor: ['#E2B7F8', '#D1E8F9', '#D7A8F5', '#A0D8F1', '#7c8cfd'],
                 hoverOffset: 4,
@@ -65,8 +65,8 @@ export default function Dashboard() {
             <PieChart data={data} />
         </div>
         </div>
-        <div className="bg-white p-4 shadow-lg rounded-lg">
-            <div className="justify-center bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+        <div className="bg-white p-4 shadow-lg rounded-xl">
+            <div className="justify-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               <div className="flex justify-center">
                 <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
               </div>
@@ -108,9 +108,9 @@ export default function Dashboard() {
             </form>
             <form>
               <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
-              placeholder="Add Income"/>
+              value="Add Income"/>
               <input type="text" className="w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
-              value="$0"/>
+              placeholder="$0"/>
             </form>
             <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg">Allocation</button>
           </div>
