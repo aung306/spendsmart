@@ -4,10 +4,10 @@ export default function Login() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <div className="absolute top-8 right-25 flex gap-4">
-        <Link href="/login"><button className="bg-white text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline">Login</button></Link>
-        <Link href="/signup"><button className="bg-[white] text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline">Sign Up</button></Link>
+        <Link href="/login"><button className="bg-white text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline cursor-pointer">Login</button></Link>
+        <Link href="/signup"><button className="bg-[white] text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline cursor-pointer">Sign Up</button></Link>
       </div>
-      <Link href="/"><div className="flex gap-4 items-start text:left flex-col sm:flex-row font-[family-name:var(--font-comfortaa)]">
+      <Link href="/" className='w-30'><div className="flex gap-4 items-start text:left flex-col sm:flex-row font-[family-name:var(--font-comfortaa)] inline">
         ALT-F4-LIFE
       </div></Link>
       <div className="flex flex-col items-center justify-center">
@@ -40,7 +40,7 @@ export default function Login() {
             </div>
           </div>
           <div className="flex items-center justify-center">
-            <button className="bg-white text-lg text-[#000C2F] text-center px-16 py-3 rounded-4xl hover:bg-[#C9CFFF] underline">
+            <button className="bg-white text-lg text-[#000C2F] text-center px-16 py-3 rounded-4xl hover:bg-[#C9CFFF] underline cursor-pointer">
               LOGIN!
             </button>
           </div>
