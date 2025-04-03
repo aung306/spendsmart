@@ -201,7 +201,7 @@ export default function Dashboard() {
                     </div>
                     <div className="w-3/4 bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
                         <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 10</p>
-                        <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[0]}: ${payments[1]}</p>
+                        <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[1]}: ${payments[1]}</p>
                     </div>
                 </div>
             </div>
