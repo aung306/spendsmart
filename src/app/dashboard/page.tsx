@@ -3,10 +3,10 @@
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Import necessary components from Chart.js
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
@@ -14,10 +14,10 @@ import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
 // Register the necessary components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(Title, Tooltip, ArcElement, CategoryScale, LinearScale);
 
 // Dynamically import Pie chart to disable SSR for it
-const PieChart = dynamic(() => import('react-chartjs-2').then(mod => mod.Pie), { ssr: false });
+const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
 
 export default function Dashboard() {
     type DateType = Date|null;
@@ -25,17 +25,22 @@ export default function Dashboard() {
     const [selectedDate, setSelectedDate] = useState<DateType|[DateType, DateType]>(new Date());
 
     const [activeView, setActiveView] = useState('dashboard');
+    const chartRef = useRef<Chart<'doughnut'> | null>(null);
+
     // Ensure the component is rendered only on the client-side
     useEffect(() => {
         setIsClient(true);
     }, []);
 
+
   const quickGlance = "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags = "Subscriptions Budget has an upcoming payment that will put the budget under $1";
   const redPrice = "$50";
 
+  const disIncome = [1000];
+
   const budgets = [1000, 1500, 500, 300, 500];
-  const budgetNames = ['Disposable Income', 'Rent', 'Groceries', 'Dining', 'Vacation'];
+  const budgetNames = ['Utilities', 'Rent', 'Groceries', 'Dining', 'Vacation'];
 
   const payments = [1149.49, 80];
   const paymentNames = ['Rent', 'Subscriptions'];
@@ -52,17 +57,38 @@ export default function Dashboard() {
         ],
     };
 
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+      cutout: '70%',
+    };
+
+
+
     if (!isClient) {
         return null; // Don't render anything on the server side
     }
 
   return (
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
-      {/* Left Column (Pie Chart) */}
+      {/* Left Column */}
       <div className="w-1/2">
         <div className="flex justify-center pt-3 pb-3">
             <div className="w-[50%] object-contain">
-            <PieChart data={data} />
+            <p className="text-gray-600 absolute w-full font-bold
+            sm:text-2xl sm:top-[13%] sm:left-[22%]
+            md:text-3xl md:top-[18%] md:left-[21%]
+            lg:text-5xl lg:top-[20%] lg:left-[20%]
+            xl:text-6xl xl:top-[25%] xl:left-[21%]">
+            ${disIncome[0]}</p>
+            <Doughnut ref={chartRef} data={data} options={options} />
         </div>
         </div>
         <div className="bg-white p-4 shadow-lg rounded-xl">
