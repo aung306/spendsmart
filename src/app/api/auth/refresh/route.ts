@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // Verify the refresh token
     let payload;
     try { payload = jwt.verify(refreshToken, JWT_SECRET) as { userId: string }; } 
-    catch (error) {
+    catch {
       return NextResponse.json(
         { message: 'Invalid refresh token' },
         { status: 401 }

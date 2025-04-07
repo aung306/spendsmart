@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest} from 'next/server';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-jwt-secret-key';
@@ -13,7 +13,10 @@ export interface JWTPayload {
 
 export function verifyToken(token: string): JWTPayload | null {
   try { return jwt.verify(token, JWT_SECRET) as JWTPayload; } 
-  catch (error) { return null; }
+  catch (error) { 
+    console.error('Token verification error:', error);
+    return null; 
+  }
 }
 
 // verify authentication token and return user information
@@ -39,5 +42,8 @@ export async function verifyAuth(req: NextRequest) {
       }
     };
   } 
-  catch (error) { return { authenticated: false }; }
+  catch (error) { 
+    console.error('Authentication error:', error);
+    return { authenticated: false }; 
+  }
 }

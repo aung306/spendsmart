@@ -42,7 +42,10 @@ export default function Login() {
       if (!response.ok) { setError(data.message || 'Login failed. Please try again.');} 
       else { router.push('/dashboard'); }
     } 
-    catch (err) { setError('An error occurred. Please try again later.'); } 
+    catch (err) { 
+      console.error('Login error:', err);
+      setError('An error occurred. Please try again later.'); 
+    } 
     finally { setLoading(false); }
   };
 
@@ -99,7 +102,7 @@ export default function Login() {
           </div>
           <div className="flex items-center justify-center">
             <button className="bg-white text-lg text-[#000C2F] text-center px-16 py-3 rounded-4xl hover:bg-[#C9CFFF] underline">
-              LOGIN!
+              {loading? 'Logging in...' : 'LOGIN!'}
             </button>
           </div>
         </form>
