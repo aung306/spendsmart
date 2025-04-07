@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     
     // Get user information
     const result = await query(
-      'SELECT account_id, username, email FROM account WHERE account_id = $1',
+      'SELECT account_id, email FROM account WHERE account_id = $1',
       [payload.userId]
     );
     
