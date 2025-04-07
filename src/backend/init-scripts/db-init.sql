@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS budget (
 
 CREATE TABLE events (
     account_id INT,
-    event_name VARCHAR(255) PRIMARY KEY,
+    event_names VARCHAR(255) PRIMARY KEY,
     occurrence INT,
     payment INT,
     FOREIGN KEY (account_id) REFERENCES account(account_id)
