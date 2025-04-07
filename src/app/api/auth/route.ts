@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '../../../backend/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-jwt-secret-key';
 
@@ -28,8 +29,6 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-
-    // Removed duplicate declaration of accessToken
     
     const user = result.rows[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -57,7 +56,30 @@ export async function POST(req: Request) {
       JWT_SECRET,
       { expiresIn: '7d' } // Refresh token expires in 7 days
     );
-    
+
+    //Set cookies for access and refresh tokens
+    const cookieStore = await cookies();
+
+    cookieStore.set({
+      name: 'accessToken',
+      value: accessToken,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'strict',
+      maxAge: 60 * 60 // 1 hour
+    });
+
+    cookieStore.set({
+      name: 'refreshToken',
+      value: refreshToken,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    });
+
     // Return tokens and user info
     return NextResponse.json({
       success: true,
