@@ -1,6 +1,6 @@
 // src/app/api/db-test/route.ts
 import { NextResponse } from 'next/server';
-import { query } from '../../../../backend/db';  // Note the path has three dots, not two
+import { query } from '../../../backend/db';  // Note the path has three dots, not two
 
 // get name and amount from budget table with account id provided
 // test using http://localhost:3000/api/db-test/budget?account_id=[number]

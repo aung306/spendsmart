@@ -1,6 +1,6 @@
 // src/app/api/db-test/route.ts
 import { NextResponse } from 'next/server';
-import { query } from '../../../../backend/db'; 
+import { query } from '../../../backend/db'; 
 
 // this hasn't been tested yet because of database table issues
 // TODO: fix this issue when creating a new event "error": "insert or update on table \"events\" violates foreign key constraint \"events_account_id_fkey\""
