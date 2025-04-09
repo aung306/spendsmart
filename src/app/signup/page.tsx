@@ -34,6 +34,7 @@ export default function Signup() {
 
         try{
             setLoading(true);
+            console.log(loading);
 
             const response = await fetch('/api/account', {
                 method: 'POST',
