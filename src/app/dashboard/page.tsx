@@ -13,28 +13,39 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
-const centerTextPlugin: Plugin<'doughnut'> = {
+interface DoughnutChart {
+  ctx: CanvasRenderingContext2D;
+  config: {
+    options: {
+      plugins: {
+        centerText: {
+          text: string;
+        };
+      };
+    };
+  };
+  width: number;
+  height: number;
+}
+
+const centerTextPlugin = {
   id: 'centerText',
-  beforeDraw(chart: Chart<'doughnut'>) {
-    const { width, height, ctx } = chart;
-    if (!ctx) return;
-
-    const text = chart.config.options?.plugins
-      ? (chart.config.options.plugins as any).centerText?.text ?? ''
-      : '';
-
+  beforeDraw: (chart: DoughnutChart) => {
+    const { ctx, width, height, config } = chart;
+    ctx.restore();
+    
+    const text = config.options.plugins.centerText.text;
     const fontSize = (height / 114).toFixed(2);
 
-    ctx.save();
     ctx.font = `${fontSize}em sans-serif`;
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#666';
 
     const textX = Math.round((width - ctx.measureText(text).width) / 2);
     const textY = height / 2;
 
+    ctx.fillStyle = '#666'; // Set text color
     ctx.fillText(text, textX, textY);
-    ctx.restore();
+    ctx.save();
   }
 };
 
