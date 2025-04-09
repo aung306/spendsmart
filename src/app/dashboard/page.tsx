@@ -13,11 +13,35 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
+const centerTextPlugin = {
+  id: 'centerText',
+  beforeDraw: (Doughnut: { ctx?: any; config?: any; width?: any; height?: any; }) => {
+    const { width } = Doughnut;
+    const { height } = Doughnut;
+    const ctx = Doughnut.ctx;
+    ctx.restore();
+    
+    const text = Doughnut.config.options.plugins.centerText.text;
+    const fontSize = (height / 114).toFixed(2);
+
+    ctx.font = `${fontSize}em sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    const textX = Math.round((width - ctx.measureText(text).width) / 2);
+    const textY = height / 2;
+
+    ctx.fillStyle = '#666'; // Set text color
+    ctx.fillText(text, textX, textY);
+    ctx.save();
+  }
+};
+
 // Register the necessary components
-ChartJS.register(Title, Tooltip, ArcElement, CategoryScale, LinearScale);
+ChartJS.register(Title, Tooltip, ArcElement, CategoryScale, LinearScale, centerTextPlugin);
 
 // Dynamically import Pie chart to disable SSR for it
 const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
+
 
 export default function Dashboard() {
     type DateType = Date|null;
@@ -66,6 +90,9 @@ export default function Dashboard() {
         tooltip: {
           enabled: true,
         },
+        centerText: {
+          text: `$${disIncome[0]}`
+        }
       },
       cutout: '70%',
     };
@@ -81,14 +108,9 @@ export default function Dashboard() {
       {/* Left Column */}
       <div className="w-1/2">
         <div className="flex justify-center pt-3 pb-3">
-            <div className="w-[50%] object-contain">
-            <p className="text-gray-600 absolute w-full font-bold
-            sm:text-2xl sm:top-[13%] sm:left-[22%]
-            md:text-3xl md:top-[18%] md:left-[21%]
-            lg:text-5xl lg:top-[20%] lg:left-[20%]
-            xl:text-6xl xl:top-[25%] xl:left-[21%]">
-            ${disIncome[0]}</p>
+            <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
+            
         </div>
         </div>
         <div className="bg-white p-4 shadow-lg rounded-xl">
