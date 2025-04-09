@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState, useRef } from 'react';
 
 // Import necessary components from Chart.js
-import { Plugin, Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
+import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
