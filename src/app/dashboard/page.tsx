@@ -3,21 +3,58 @@
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Import necessary components from Chart.js
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
+interface DoughnutChart {
+  ctx: CanvasRenderingContext2D;
+  config: {
+    options: {
+      plugins: {
+        centerText: {
+          text: string;
+        };
+      };
+    };
+  };
+  width: number;
+  height: number;
+}
+
+const centerTextPlugin = {
+  id: 'centerText',
+  beforeDraw: (chart: DoughnutChart) => {
+    const { ctx, width, height, config } = chart;
+    ctx.restore();
+    
+    const text = config.options.plugins.centerText.text;
+    const fontSize = (height / 114).toFixed(2);
+
+    ctx.font = `${fontSize}em sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    const textX = Math.round((width - ctx.measureText(text).width) / 2);
+    const textY = height / 2;
+
+    ctx.fillStyle = '#666'; // Set text color
+    ctx.fillText(text, textX, textY);
+    ctx.save();
+  }
+};
+
 // Register the necessary components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(Title, Tooltip, ArcElement, CategoryScale, LinearScale, centerTextPlugin);
 
 // Dynamically import Pie chart to disable SSR for it
-const PieChart = dynamic(() => import('react-chartjs-2').then(mod => mod.Pie), { ssr: false });
+const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
+
 
 export default function Dashboard() {
     type DateType = Date|null;
@@ -25,17 +62,22 @@ export default function Dashboard() {
     const [selectedDate, setSelectedDate] = useState<DateType|[DateType, DateType]>(new Date());
 
     const [activeView, setActiveView] = useState('dashboard');
+    const chartRef = useRef<Chart<'doughnut'> | null>(null);
+
     // Ensure the component is rendered only on the client-side
     useEffect(() => {
         setIsClient(true);
     }, []);
 
+
   const quickGlance = "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags = "Subscriptions Budget has an upcoming payment that will put the budget under $1";
   const redPrice = "$50";
 
+  const disIncome = [1000];
+
   const budgets = [1000, 1500, 500, 300, 500];
-  const budgetNames = ['Disposable Income', 'Rent', 'Groceries', 'Dining', 'Vacation'];
+  const budgetNames = ['Utilities', 'Rent', 'Groceries', 'Dining', 'Vacation'];
 
   const payments = [1149.49, 80];
   const paymentNames = ['Rent', 'Subscriptions'];
@@ -52,17 +94,36 @@ export default function Dashboard() {
         ],
     };
 
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+        },
+        centerText: {
+          text: `$${disIncome[0]}`
+        }
+      },
+      cutout: '70%',
+    };
+
+
+
     if (!isClient) {
         return null; // Don't render anything on the server side
     }
 
   return (
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
-      {/* Left Column (Pie Chart) */}
+      {/* Left Column */}
       <div className="w-1/2">
         <div className="flex justify-center pt-3 pb-3">
-            <div className="w-[50%] object-contain">
-            <PieChart data={data} />
+            <div className="object-contain w-[50%]">
+            <Doughnut ref={chartRef} data={data} options={options} />
+            
         </div>
         </div>
         <div className="bg-white p-4 shadow-lg rounded-xl">
