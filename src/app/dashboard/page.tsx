@@ -6,33 +6,35 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState, useRef } from 'react';
 
 // Import necessary components from Chart.js
-import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
+import { Plugin, Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
-const centerTextPlugin = {
+const centerTextPlugin: Plugin<'doughnut'> = {
   id: 'centerText',
-  beforeDraw: (Doughnut: { ctx?: any; config?: any; width?: any; height?: any; }) => {
-    const { width } = Doughnut;
-    const { height } = Doughnut;
-    const ctx = Doughnut.ctx;
-    ctx.restore();
-    
-    const text = Doughnut.config.options.plugins.centerText.text;
+  beforeDraw(chart: Chart<'doughnut'>) {
+    const { width, height, ctx } = chart;
+    if (!ctx) return;
+
+    const text = chart.config.options?.plugins
+      ? (chart.config.options.plugins as any).centerText?.text ?? ''
+      : '';
+
     const fontSize = (height / 114).toFixed(2);
 
+    ctx.save();
     ctx.font = `${fontSize}em sans-serif`;
     ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#666';
 
     const textX = Math.round((width - ctx.measureText(text).width) / 2);
     const textY = height / 2;
 
-    ctx.fillStyle = '#666'; // Set text color
     ctx.fillText(text, textX, textY);
-    ctx.save();
+    ctx.restore();
   }
 };
 
