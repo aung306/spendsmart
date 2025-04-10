@@ -110,7 +110,22 @@ export default function Dashboard() {
       cutout: '70%',
     };
 
-
+    function dashboardReturn(view : String){
+      if((activeView == 'income' && view == "income")||  (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")){
+        setActiveView('dashboard');
+      }
+      else{
+        if(view == "income"){
+          setActiveView('income');
+        }
+        if(view == "budget"){
+          setActiveView('budget');
+        }
+        if(view == "payment"){
+          setActiveView('payment');
+        }
+      }
+    }
 
     if (!isClient) {
         return null; // Don't render anything on the server side
@@ -132,12 +147,12 @@ export default function Dashboard() {
                 <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
               </div>
                 <div className="shadow-lg rounded-lg flex">
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('income')}>Income</button>
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('budget')}>Budget</button>
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('payment')}>Payment</button>                
+                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
+                  onClick={() => dashboardReturn("income")}>Income</button>
+                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
+                  onClick={() => dashboardReturn("budget")}>Budget</button>
+                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
+                  onClick={() => dashboardReturn("payment")}>Payment</button>                
                 </div>
             </div>
         {/* Quick Glance and Red Flags Section */}
@@ -162,24 +177,44 @@ export default function Dashboard() {
         {activeView === 'income' && (
           <div className="text-center bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
             <form>
-              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
               value="Update Salary"/>
               <input type="text" className="w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
               placeholder="$70,000/YR"/>
             </form>
             <form>
-              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
               value="Add Income"/>
               <input type="text" className="w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
               placeholder="$0"/>
             </form>
-            <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg">Allocation</button>
+            <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer">Allocation</button>
           </div>
         )}
 
         {/* Budget Section */}
         {activeView === 'budget' && (
           <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              <form>
+                <div className="text-center">
+                  <select
+                    id="budgetDropdown"
+                    className="bg-white p-2 border rounded-lg text-blue-400"
+                    onChange={(e) => {
+                      const selectedBudget = e.target.value;
+                      console.log("Selected Budget:", selectedBudget);
+                    }}
+                  >
+                    {budgetNames.map((budgetName, index) => (
+                      <option key={index} value={budgetName}>
+                        {budgetName}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="text" className="bg-white p-2 m-2 text-black" placeholder="$0"/>
+                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" value="Create New Budget"/>
+                </div>
+              </form>
             {budgets.map((budget, index) => (
               <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
                 <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget}</p>
