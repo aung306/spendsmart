@@ -127,6 +127,44 @@ export default function Dashboard() {
       }
     }
 
+    function BudgetForm(accountId : number, name : string, amount : string) {
+      // Mark handleSubmit as async
+      const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+    
+        // Prepare data to be sent to the backend
+        const budgetData = {
+          account_id: accountId,
+          name: name,
+          amount: parseFloat(amount),
+        };
+    
+        try {
+          const response = await fetch('/api/budget', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(budgetData),
+          });
+    
+          const data = await response.json();
+    
+          if (response.ok) {
+            // Handle success
+            console.log(`Budget created successfully! Account: ${data.account.name}, Amount: ${data.account.amount}`);
+          } else {
+            // Handle error
+            console.log(`Error: ${data.message}`);
+          }
+        } catch (error) {
+          // Handle network or other errors
+          console.log('Network error occurred. Please try again.');
+        }
+    
+      }
+    }
+
     if (!isClient) {
         return null; // Don't render anything on the server side
     }
@@ -211,7 +249,7 @@ export default function Dashboard() {
                       </option>
                     ))}
                   </select>
-                  <input type="text" className="bg-white p-2 m-2 text-black" placeholder="$0"/>
+                  <input type="text" className="bg-white p-2 m-2 text-black" placeholder="$0" id="amt"/>
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" value="Create New Budget"/>
                 </div>
               </form>
