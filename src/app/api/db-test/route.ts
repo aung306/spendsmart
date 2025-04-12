@@ -1,16 +1,17 @@
 // src/app/api/db-test/route.ts
 import { NextResponse } from 'next/server';
-import { query } from '../../../backend/db';  // Note the path has three dots, not two
+import { query } from '../../../backend/db';
 
 export async function GET() {
   try {
-    const result = await query('SELECT NOW() as current_time');
+    const result = await query('SELECT NOW() AS now_timestamp') as { now_timestamp: string }[];
     
     return NextResponse.json({
       message: 'Database connection successful',
-      timestamp: result.rows[0].current_time
+      timestamp: result[0].now_timestamp
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Database connection error:', error);
     
     return NextResponse.json(

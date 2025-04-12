@@ -1,19 +1,20 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
+  mysql:
+    image: mysql:8.0
     container_name: spend_smart
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}   
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT}:3306" 
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
       - ./init-scripts/db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
 
 volumes:
-  postgres_data:
+  mysql_data:

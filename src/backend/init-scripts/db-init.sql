@@ -1,30 +1,33 @@
 CREATE TABLE IF NOT EXISTS account (
-    account_id SERIAL PRIMARY KEY,
+    account_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(255),
     last_name VARCHAR(255),
     email VARCHAR(255),
-    password VARCHAR(255),
-    disposable_income INT,
-    biweekly_income INT
+    password VARCHAR(255)
+    -- Removed income
 );
 
 CREATE TABLE IF NOT EXISTS budget (
-    account_id INT,
-    name VARCHAR(255) PRIMARY KEY,
+    -- Added budget id
+    budget_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
+    account_id INT UNSIGNED,
+    name VARCHAR(255),
     amount INT,
     FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
 
-CREATE TABLE events (
-    account_id INT,
-    event_names VARCHAR(255) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS events (
+    event_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    budget_id INT UNSIGNED,
+    event_name VARCHAR(255),
     occurrence INT,
     payment INT,
-    FOREIGN KEY (account_id) REFERENCES account(account_id)
+    -- Connected event with budget
+    FOREIGN KEY (budget_id) REFERENCES budget(budget_id)
 );
 
-CREATE TABLE income (
-    account_id INT,
+CREATE TABLE IF NOT EXISTS income (
+    account_id INT UNSIGNED,
     name VARCHAR(255) PRIMARY KEY,
     amount INT,
     occurrence INT,

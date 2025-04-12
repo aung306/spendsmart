@@ -18,19 +18,19 @@ export async function POST(req: Request) {
     }
     
     const result = await query(
-      'SELECT account_id, email, password, first_name, last_name FROM account WHERE email = $1',
+      'SELECT account_id, email, password, first_name, last_name FROM account WHERE email = ?',
       [email]
-    );
+    ) as Array<{ account_id: number; email: string; password: string; first_name: string; last_name: string; }> ;
     
     // User not found
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 }
       );
     }
     
-    const user = result.rows[0];
+    const user = result[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
     
     if (!passwordMatch) {
@@ -93,7 +93,8 @@ export async function POST(req: Request) {
       }
     });
     
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Login error:', error);
     
     return NextResponse.json(
