@@ -3,10 +3,10 @@
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef} from 'react';
 
 // Import necessary components from Chart.js
-import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart} from 'chart.js';
+import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
@@ -33,7 +33,7 @@ const centerTextPlugin = {
   beforeDraw: (chart: DoughnutChart) => {
     const { ctx, width, height, config } = chart;
     ctx.restore();
-    
+
     const text = config.options.plugins.centerText.text;
     const fontSize = (height / 114).toFixed(2);
 
@@ -57,215 +57,406 @@ const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnu
 
 
 export default function Dashboard() {
-    type DateType = Date|null;
-    const [isClient, setIsClient] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<DateType|[DateType, DateType]>(new Date());
+  type DateType = Date | null;
+  const [isClient, setIsClient] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<DateType | [DateType, DateType]>(new Date());
 
-    const [activeView, setActiveView] = useState('dashboard');
-    const chartRef = useRef<Chart<'doughnut'> | null>(null);
+  const [activeView, setActiveView] = useState('dashboard');
+  const chartRef = useRef<Chart<'doughnut'> | null>(null);
 
-    // Ensure the component is rendered only on the client-side
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+  // Ensure the component is rendered only on the client-side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-
+  // Quick Glance
   const quickGlance = "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags = "Subscriptions Budget has an upcoming payment that will put the budget under $1";
   const redPrice = "$50";
 
-  const disIncome = [1000];
+  // Budget
+  type Budget = {
+    name: string;
+    amount: number;
+  }
 
-  const budgets = [1000, 1500, 500, 300, 500];
-  const budgetNames = ['Utilities', 'Rent', 'Groceries', 'Dining', 'Vacation'];
+  const [budgets, setBudgets] = useState<Budget[]>([]);
 
-  const payments = [1149.49, 80];
-  const paymentNames = ['Rent', 'Subscriptions'];
+  const [budgetName, setBudgetName] = useState('');
+  const [budgetAmount, setBudgetAmount] = useState('');
 
-    const data = {
-        labels: budgetNames,
-        datasets: [
-            {
-                label: '',
-                data: budgets,
-                backgroundColor: ['#E2B7F8', '#D1E8F9', '#D7A8F5', '#A0D8F1', '#7c8cfd'],
-                hoverOffset: 4,
-            },
-        ],
-    };
+  const addBudget = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!budgetName || !budgetAmount) return;
 
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          enabled: true,
-        },
-        centerText: {
-          text: `$${disIncome[0]}`
-        }
-      },
-      cutout: '70%',
-    };
+    const amountNumber = parseFloat(budgetAmount);
+    if (isNaN(amountNumber)) return;
 
+    setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
 
+    setBudgetName('');
+    setBudgetAmount('');
+  };
 
-    if (!isClient) {
-        return null; // Don't render anything on the server side
+  // Income - "Update Salary"
+  const [salaryAmount, setSalaryAmount] = useState('');
+  const [salaryOccurrence, setSalaryOccurrence] = useState('365');
+  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
+
+  const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!salaryAmount || !salaryOccurrence) return;
+
+    const salaryNumber = parseFloat(salaryAmount);
+    if (isNaN(salaryNumber)) return;
+
+    let salaryOccurrenceNumber: number | null = null;
+    if (salaryOccurrence == 'custom') {
+      const customNumber = parseInt(customSalaryOccurrence);
+      if (isNaN(customNumber)) return;
+      salaryOccurrenceNumber = customNumber;
+    } else {
+      salaryOccurrenceNumber = parseInt(salaryOccurrence);
+      if (isNaN(salaryOccurrenceNumber)) return;
     }
+
+    setDisIncome((prev) => (prev + salaryNumber));
+  };
+
+
+  // Income - "Add Income"
+  const [disIncome, setDisIncome] = useState(0);
+  const [newIncome, setNewIncome] = useState('');
+
+  const addIncome = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!newIncome) return;
+
+    const incomeNumber = parseFloat(newIncome);
+    if (isNaN(incomeNumber)) return;
+
+    setDisIncome((prev) => (prev + incomeNumber));
+
+    setNewIncome('');
+  };
+
+  // Payment 
+  type Payment = {
+    budget: Budget;
+    amount: number;
+    occurrence: number;
+  }
+
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentBudget, setPaymentBudget] = useState<Budget>();
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentOccurrence, setPaymentOccurrence] = useState('');
+  const [customOccurrence, setCustomOccurrence] = useState('');
+
+  const addPayment = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!paymentBudget || !paymentAmount || !paymentOccurrence) return;
+
+    const paymentAmountNumber = parseFloat(paymentAmount);
+    if (isNaN(paymentAmountNumber)) return;
+
+    let paymentOccurrenceNumber: number | null = null;
+    if (paymentOccurrence === 'custom') {
+      const customNumber = parseInt(customOccurrence);
+      if (isNaN(customNumber)) return;
+      paymentOccurrenceNumber = customNumber;
+    } else {
+      paymentOccurrenceNumber = parseInt(paymentOccurrence);
+      if (isNaN(paymentOccurrenceNumber)) return;
+    }
+
+    setPayments([...payments, { budget: paymentBudget, amount: paymentAmountNumber, occurrence: paymentOccurrenceNumber }]);
+    setPaymentAmount('');
+    setPaymentOccurrence('');
+    setCustomOccurrence('');
+    setPaymentBudget(undefined);
+  };
+
+  const getOccurrenceAbbreviation = (occurrence: number): string => {
+    switch (occurrence) {
+      case 7:
+        return '/W';
+      case 14:
+        return '/BW';
+      case 30:
+        return '/M';
+      case 365:
+        return '/Y';
+      default:
+        return `/${occurrence}D`;
+    }
+  };
+
+  //const disIncome = [1000];
+
+  //const budgets = [1000, 1500, 500, 300, 500];
+  //const budgetNames = ['Utilities', 'Rent', 'Groceries', 'Dining', 'Vacation'];
+
+  //const payments = [1149.49, 80];
+  //const paymentNames = ['Rent', 'Subscriptions'];
+
+  const data = {
+    labels: budgets.map((budget) => budget.name),
+    datasets: [
+      {
+        label: '',
+        data: budgets.map((budget) => budget.amount),
+        backgroundColor: ['#E2B7F8', '#D1E8F9', '#D7A8F5', '#A0D8F1', '#7c8cfd'],
+        hoverOffset: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: true,
+      },
+      centerText: {
+        text: `$${disIncome}`
+      }
+    },
+    cutout: '70%',
+  };
+
+
+
+  if (!isClient) {
+    return null; // Don't render anything on the server side
+  }
 
   return (
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column */}
       <div className="w-1/2">
         <div className="flex justify-center pt-3 pb-3">
-            <div className="object-contain w-[50%]">
+          <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
-            
-        </div>
+
+          </div>
         </div>
         <div className="bg-white p-4 shadow-lg rounded-xl">
-            <div className="justify-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <div className="flex justify-center">
-                <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
-              </div>
-                <div className="shadow-lg rounded-lg flex">
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('income')}>Income</button>
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('budget')}>Budget</button>
-                  <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                  onClick={() => setActiveView('payment')}>Payment</button>                
-                </div>
+          <div className="justify-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+            <div className="flex justify-center">
+              <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
             </div>
-        {/* Quick Glance and Red Flags Section */}
-        {activeView === 'dashboard' && (
-          <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-            <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
-            <p className="text-gray-600 text-sm">{quickGlance}</p>
-          </div>
-        )}
-
-        {activeView === 'dashboard' && (
-          <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-            <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
             <div className="shadow-lg rounded-lg flex">
-              <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p>
-              <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
+                onClick={() => setActiveView('income')}>Income</button>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
+                onClick={() => setActiveView('budget')}>Budget</button>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
+                onClick={() => setActiveView('payment')}>Payment</button>
             </div>
           </div>
-        )}
+          {/* Quick Glance and Red Flags Section */}
+          {activeView === 'dashboard' && (
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+              <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
+              <p className="text-gray-600 text-sm">{quickGlance}</p>
+            </div>
+          )}
 
-        {/* Income Section */}
-        {activeView === 'income' && (
-          <div className="text-center bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-            <form>
-              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
-              value="Update Salary"/>
-              <input type="text" className="w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
-              placeholder="$70,000/YR"/>
-            </form>
-            <form>
-              <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
-              value="Add Income"/>
-              <input type="text" className="w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
-              placeholder="$0"/>
-            </form>
-            <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg">Allocation</button>
-          </div>
-        )}
-
-        {/* Budget Section */}
-        {activeView === 'budget' && (
-          <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-            {budgets.map((budget, index) => (
-              <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
-                <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget}</p>
-                <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budgetNames[index]}</p>
+          {activeView === 'dashboard' && (
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+              <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
+              <div className="shadow-lg rounded-lg flex">
+                <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p>
+                <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Payment Section */}
-        {activeView === 'payment' && (
-          <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-          <form>
-          <div className="text-center">
-            <select
-              id="budgetDropdown"
-              className="bg-white p-2 border rounded-lg text-blue-400"
-              onChange={(e) => {
-                const selectedBudget = e.target.value;
-                console.log("Selected Budget:", selectedBudget);
-              }}
-            >
-              {budgetNames.map((budgetName, index) => (
-                <option key={index} value={budgetName}>
-                  {budgetName}
-                </option>
-              ))}
-            </select>
-            <input type="text" className="bg-white p-2 m-2 text-black" placeholder="$0"/>
-            <input type="submit" className="bg-blue-200 p-2 m-2 text-blue-400 rounded-xl" value="Submit"/>
-          </div>
-          </form>
-          <div className="bg-white mb-2 mt-4 flex rounded-xl">
-            <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{paymentNames[0]}</p>
-            <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payments[0]}</p>
-            <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">/M</p>
-          </div>
-          <div className="bg-white mt-2 flex rounded-xl">
-            <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{paymentNames[1]}</p>
-            <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payments[1]}</p>
-            <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">/2W</p>
-          </div>
-        </div>
-        )}
+          {/* Income Section */}
+          {activeView === 'income' && (
+            <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              <form onSubmit={updateSalary}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                  value="Update Salary" />
+                <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
+                  placeholder="$70,000" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} />
+                {/* Salary Occurrence Select */}
+                <select
+                  className="bg-white p-2 m-1 border rounded-lg text-blue-400"
+                  value={salaryOccurrence || ''}
+                  onChange={(e) => setSalaryOccurrence(e.target.value)}
+                >
+                  <option value="" disabled hidden>Select Occurrence</option>
+                  <option value="7">Weekly</option>
+                  <option value="14">Bi-weekly</option>
+                  <option value="30">Monthly</option>
+                  <option value="365">Yearly</option>
+                  <option value="custom">Custom</option>
+                </select>
+
+                {salaryOccurrence === 'custom' && (
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-1/10 bg-white p-2 m-2 text-black"
+                    placeholder="1"
+                    value={customSalaryOccurrence}
+                    onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
+                  />
+                )}
+              </form>
+              <form onSubmit={addIncome}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                  value="Add Income" />
+                <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
+                  placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
+              </form>
+              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg">Allocation</button>
+            </div>
+          )}
+
+          {/* Budget Section */}
+          {activeView === 'budget' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              <form onSubmit={addBudget} className="flex flex-wrap justify-center items-center">
+                <div className="text-center mb-4">
+                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                    value="Add Budget" />
+                  <input type="text" className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="Name" value={budgetName} onChange={(e) => setBudgetName(e.target.value)} />
+                  <input type="text" className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="$0" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} />
+                </div>
+
+              </form>
+              <div>
+                {budgets.map((budget, index) => (
+                  <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                    <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget.amount}</p>
+                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
+          {/* Payment Section */}
+          {activeView === 'payment' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              <form onSubmit={addPayment}>
+                <div className="text-center mb-4">
+                  {/* Budget Select */}
+                  <select
+                    id="budgetDropdown"
+                    className="bg-white p-2 m-1 border rounded-lg text-blue-400"
+                    value={paymentBudget?.name || ''}
+                    onChange={(e) => {
+                      const selectedName = e.target.value;
+                      const selectedBudget = budgets.find((b) => b.name === selectedName);
+                      if (selectedBudget) {
+                        setPaymentBudget(selectedBudget);
+                      }
+                    }}
+                  >
+                    <option value="" disabled hidden>Select Budget</option>
+                    {budgets.map((budget, index) => (
+                      <option key={index} value={budget.name}>
+                        {budget.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Occurrence Select */}
+                  <select
+                    className="bg-white p-2 m-1 border rounded-lg text-blue-400"
+                    value={paymentOccurrence || ''}
+                    onChange={(e) => setPaymentOccurrence(e.target.value)}
+                  >
+                    <option value="" disabled hidden>Select Occurrence</option>
+                    <option value="7">Weekly</option>
+                    <option value="14">Bi-weekly</option>
+                    <option value="30">Monthly</option>
+                    <option value="365">Yearly</option>
+                    <option value="custom">Custom</option>
+                  </select>
+
+                  {paymentOccurrence === 'custom' && (
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-1/10 bg-white p-2 m-2 text-black"
+                      placeholder="1"
+                      value={customOccurrence}
+                      onChange={(e) => setCustomOccurrence(e.target.value)}
+                    />
+                  )}
+
+                  <input type="text" className="w-1/8 bg-white p-2 m-1 text-black" placeholder="$0" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
+                  <input type="submit" className="bg-blue-200 p-2 m-2 text-blue-400 rounded-xl" value="Submit" />
+
+                </div>
+              </form>
+              <div>
+                {payments.map((payment, index) => (
+                  <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                    <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{payment.budget.name}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-            {/* Right Column (Rounded Box) */}
-            <div className="w-1/2">
-                <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Calendar</h2>
-                <div className="bg-white p-6 rounded-4xl shadow-lg flex flex-col justify-center items-center">
-                    <Calendar className="mb-5"
-                    onChange={setSelectedDate}
-                    value={selectedDate}
-                    tileContent={({ date }) => {
-                        // Add custom conditions for different days or dates
-                        const day = date.getDate();
-                        let content;
+      {/* Right Column (Rounded Box) */}
+      <div className="w-1/2">
+        <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Calendar</h2>
+        <div className="bg-white p-6 rounded-4xl shadow-lg flex flex-col justify-center items-center">
+          <Calendar className="mb-5"
+            onChange={setSelectedDate}
+            value={selectedDate}
+            tileContent={({ date }) => {
+              // Add custom conditions for different days or dates
+              const day = date.getDate();
+              let content;
 
-                        // Example condition: Show "stuff" on the 15th and 20th of the month
-                        if (day === 3 || day === 10) {
-                            content = "Payment Due";
-                        } else {
-                            content = ""; // Or you can show something else or nothing
-                        }
+              // Example condition: Show "stuff" on the 15th and 20th of the month
+              if (day === 3 || day === 10) {
+                content = "Payment Due";
+              } else {
+                content = ""; // Or you can show something else or nothing
+              }
 
-                        return (
-                        <div className="tile flex flex-col justify-center">
-                        <div className="tile-date-number rounded-full">{day}</div>
-                        <div className={`tile-content rounded-2xl bg-[#ebebeb] p-1 ${content ? "" : "hidden"}`}>
-                            {content}
-                        </div>
-                        </div>
-                        );
-                    }}
-                    />
-                    <div className="w-3/4 bg-gray-200 m-3 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-                        <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 3</p>
-                        <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[0]}: ${payments[0]}</p>
-                    </div>
-                    <div className="w-3/4 bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-                        <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 10</p>
-                        <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[1]}: ${payments[1]}</p>
-                    </div>
+              return (
+                <div className="tile flex flex-col justify-center">
+                  <div className="tile-date-number rounded-full">{day}</div>
+                  <div className={`tile-content rounded-2xl bg-[#ebebeb] p-1 ${content ? "" : "hidden"}`}>
+                    {content}
+                  </div>
                 </div>
-            </div>
+              );
+            }}
+          />
+          {/* Commented out due to changes in format */}
+          
+          {/* <div className="w-3/4 bg-gray-200 m-3 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
+            <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 3</p>
+            <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[0]}: ${payments[0]}</p>
+          </div>
+          <div className="w-3/4 bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
+            <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 10</p>
+            <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[1]}: ${payments[1]}</p>
+          </div> */}
         </div>
-    );
+      </div>
+    </div>
+  );
 }
