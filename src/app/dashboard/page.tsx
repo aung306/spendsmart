@@ -8,9 +8,6 @@ import { useEffect, useState, useRef, SyntheticEvent } from 'react';
 // Import necessary components from Chart.js
 import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
 
-// Import functions to connect to backend
-import { getIncome, setIncome, getBudget, setBudget, getEvent, setEvent } from './requests';
-
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
