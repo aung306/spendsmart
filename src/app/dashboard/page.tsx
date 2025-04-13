@@ -3,7 +3,7 @@
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useRef, SyntheticEvent } from 'react';
+import { useEffect, useState, useRef} from 'react';
 
 // Import necessary components from Chart.js
 import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
@@ -11,7 +11,7 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import './calendar.css';
+import './calendar.css'
 
 interface DoughnutChart {
   ctx: CanvasRenderingContext2D;
