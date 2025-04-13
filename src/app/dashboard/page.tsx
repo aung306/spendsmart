@@ -8,10 +8,13 @@ import { useEffect, useState, useRef, SyntheticEvent } from 'react';
 // Import necessary components from Chart.js
 import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
 
+// Import functions to connect to backend
+import { getIncome, setIncome, getBudget, setBudget, getEvent, setEvent } from './requests';
+
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import './calendar.css'
+import './calendar.css';
 
 interface DoughnutChart {
   ctx: CanvasRenderingContext2D;
@@ -82,11 +85,6 @@ export default function Dashboard() {
 
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
-  // { name: 'Food', amount: 1000 },
-  // { name: 'Rent', amount: 1500 },
-  // { name: 'Gas', amount: 500 },
-  // { name: 'Entertainment', amount: 300 },
-  // { name: 'Misc', amount: 500 },
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
 
@@ -104,36 +102,29 @@ export default function Dashboard() {
   };
 
   // Income - "Update Salary"
-  type Salary = {
-    amount: number;
-    occurence: number;
-  }
-
-  const [salary, setSalary] = useState<Salary>();
   const [salaryAmount, setSalaryAmount] = useState('');
-  const [salaryOccurence, setSalaryOccurence] = useState('365');
-  const [customSalaryOccurence, setCustomSalaryOccurence] = useState('');
+  const [salaryOccurrence, setSalaryOccurrence] = useState('365');
+  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
 
   const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!salaryAmount || !salaryOccurence) return;
+    if (!salaryAmount || !salaryOccurrence) return;
 
     const salaryNumber = parseFloat(salaryAmount);
     if (isNaN(salaryNumber)) return;
 
-    let salaryOccurenceNumber: number | null = null;
-    if (salaryOccurence == 'custom') {
-      const customNumber = parseInt(customSalaryOccurence);
+    let salaryOccurrenceNumber: number | null = null;
+    if (salaryOccurrence == 'custom') {
+      const customNumber = parseInt(customSalaryOccurrence);
       if (isNaN(customNumber)) return;
-      salaryOccurenceNumber = customNumber;
+      salaryOccurrenceNumber = customNumber;
     } else {
-      salaryOccurenceNumber = parseInt(salaryOccurence);
-      if (isNaN(salaryOccurenceNumber)) return;
+      salaryOccurrenceNumber = parseInt(salaryOccurrence);
+      if (isNaN(salaryOccurrenceNumber)) return;
     }
-    setDisIncome((prev) => (prev + salaryNumber));
 
-    setSalary({ amount: salaryNumber, occurence: salaryOccurenceNumber, });
+    setDisIncome((prev) => (prev + salaryNumber));
   };
 
 
@@ -157,41 +148,41 @@ export default function Dashboard() {
   type Payment = {
     budget: Budget;
     amount: number;
-    occurence: number;
+    occurrence: number;
   }
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentBudget, setPaymentBudget] = useState<Budget>();
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentOccurence, setPaymentOccurence] = useState('');
-  const [customOccurence, setCustomOccurence] = useState('');
+  const [paymentOccurrence, setPaymentOccurrence] = useState('');
+  const [customOccurrence, setCustomOccurrence] = useState('');
 
   const addPayment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!paymentBudget || !paymentAmount || !paymentOccurence) return;
+    if (!paymentBudget || !paymentAmount || !paymentOccurrence) return;
 
     const paymentAmountNumber = parseFloat(paymentAmount);
     if (isNaN(paymentAmountNumber)) return;
 
-    let paymentOccurenceNumber: number | null = null;
-    if (paymentOccurence === 'custom') {
-      const customNumber = parseInt(customOccurence);
+    let paymentOccurrenceNumber: number | null = null;
+    if (paymentOccurrence === 'custom') {
+      const customNumber = parseInt(customOccurrence);
       if (isNaN(customNumber)) return;
-      paymentOccurenceNumber = customNumber;
+      paymentOccurrenceNumber = customNumber;
     } else {
-      paymentOccurenceNumber = parseInt(paymentOccurence);
-      if (isNaN(paymentOccurenceNumber)) return;
+      paymentOccurrenceNumber = parseInt(paymentOccurrence);
+      if (isNaN(paymentOccurrenceNumber)) return;
     }
 
-    setPayments([...payments, { budget: paymentBudget, amount: paymentAmountNumber, occurence: paymentOccurenceNumber }]);
+    setPayments([...payments, { budget: paymentBudget, amount: paymentAmountNumber, occurrence: paymentOccurrenceNumber }]);
     setPaymentAmount('');
-    setPaymentOccurence('');
-    setCustomOccurence('');
+    setPaymentOccurrence('');
+    setCustomOccurrence('');
     setPaymentBudget(undefined);
   };
 
-  const getOccurenceAbbreviation = (occurence: number): string => {
-    switch (occurence) {
+  const getOccurrenceAbbreviation = (occurrence: number): string => {
+    switch (occurrence) {
       case 7:
         return '/W';
       case 14:
@@ -201,7 +192,7 @@ export default function Dashboard() {
       case 365:
         return '/Y';
       default:
-        return `/${occurence}D`;
+        return `/${occurrence}D`;
     }
   };
 
@@ -291,19 +282,19 @@ export default function Dashboard() {
 
           {/* Income Section */}
           {activeView === 'income' && (
-            <div className="text-center bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+            <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               <form onSubmit={updateSalary}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$70,000" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} />
-                {/* Salary Occurence Select */}
+                {/* Salary Occurrence Select */}
                 <select
                   className="bg-white p-2 m-1 border rounded-lg text-blue-400"
-                  value={salaryOccurence || ''}
-                  onChange={(e) => setSalaryOccurence(e.target.value)}
+                  value={salaryOccurrence || ''}
+                  onChange={(e) => setSalaryOccurrence(e.target.value)}
                 >
-                  <option value="" disabled hidden>Select Frequency</option>
+                  <option value="" disabled hidden>Select Occurrence</option>
                   <option value="7">Weekly</option>
                   <option value="14">Bi-weekly</option>
                   <option value="30">Monthly</option>
@@ -311,14 +302,14 @@ export default function Dashboard() {
                   <option value="custom">Custom</option>
                 </select>
 
-                {salaryOccurence === 'custom' && (
+                {salaryOccurrence === 'custom' && (
                   <input
                     type="number"
                     min="1"
                     className="w-1/10 bg-white p-2 m-2 text-black"
                     placeholder="1"
-                    value={customSalaryOccurence}
-                    onChange={(e) => setCustomSalaryOccurence(e.target.value)}
+                    value={customSalaryOccurrence}
+                    onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
                   />
                 )}
               </form>
@@ -362,7 +353,7 @@ export default function Dashboard() {
           {activeView === 'payment' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               <form onSubmit={addPayment}>
-                <div className="text-center">
+                <div className="text-center mb-4">
                   {/* Budget Select */}
                   <select
                     id="budgetDropdown"
@@ -384,13 +375,13 @@ export default function Dashboard() {
                     ))}
                   </select>
 
-                  {/* Occurence Select */}
+                  {/* Occurrence Select */}
                   <select
                     className="bg-white p-2 m-1 border rounded-lg text-blue-400"
-                    value={paymentOccurence || ''}
-                    onChange={(e) => setPaymentOccurence(e.target.value)}
+                    value={paymentOccurrence || ''}
+                    onChange={(e) => setPaymentOccurrence(e.target.value)}
                   >
-                    <option value="" disabled hidden>Select Frequency</option>
+                    <option value="" disabled hidden>Select Occurrence</option>
                     <option value="7">Weekly</option>
                     <option value="14">Bi-weekly</option>
                     <option value="30">Monthly</option>
@@ -398,14 +389,14 @@ export default function Dashboard() {
                     <option value="custom">Custom</option>
                   </select>
 
-                  {paymentOccurence === 'custom' && (
+                  {paymentOccurrence === 'custom' && (
                     <input
                       type="number"
                       min="1"
                       className="w-1/10 bg-white p-2 m-2 text-black"
                       placeholder="1"
-                      value={customOccurence}
-                      onChange={(e) => setCustomOccurence(e.target.value)}
+                      value={customOccurrence}
+                      onChange={(e) => setCustomOccurrence(e.target.value)}
                     />
                   )}
 
@@ -419,7 +410,7 @@ export default function Dashboard() {
                   <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
                     <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{payment.budget.name}</p>
                     <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurenceAbbreviation(payment.occurence)}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
                   </div>
                 ))}
               </div>
@@ -457,6 +448,8 @@ export default function Dashboard() {
               );
             }}
           />
+          {/* Commented out due to changes in format */}
+          
           {/* <div className="w-3/4 bg-gray-200 m-3 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
             <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 3</p>
             <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[0]}: ${payments[0]}</p>
