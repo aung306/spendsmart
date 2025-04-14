@@ -195,6 +195,23 @@ export default function Dashboard() {
     setPaymentBudget(undefined);
   };
 
+  function dashboardReturn(view : String){
+    if((activeView == 'income' && view == "income")||  (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")){
+      setActiveView('dashboard');
+    }
+    else{
+      if(view == "income"){
+        setActiveView('income');
+      }
+      if(view == "budget"){
+        setActiveView('budget');
+      }
+      if(view == "payment"){
+        setActiveView('payment');
+      }
+    }
+  }
+
   const getOccurrenceAbbreviation = (occurrence: number): string => {
     switch (occurrence) {
       case 7:
@@ -260,12 +277,12 @@ export default function Dashboard() {
               <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
             </div>
             <div className="shadow-lg rounded-lg flex">
-              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                onClick={() => setActiveView('income')}>Income</button>
-              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                onClick={() => setActiveView('budget')}>Budget</button>
-              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg"
-                onClick={() => setActiveView('payment')}>Payment</button>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
+                onClick={() => dashboardReturn("income")}>Income</button>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
+                onClick={() => dashboardReturn("budget")}>Budget</button>
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer" 
+                onClick={() => dashboardReturn("payment")}>Payment</button>
             </div>
           </div>
           {/* Quick Glance and Red Flags Section */}
@@ -288,9 +305,9 @@ export default function Dashboard() {
 
           {/* Income Section */}
           {activeView === 'income' && (
-            <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+            <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
               <form onSubmit={updateSalary}>
-                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$70,000" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} />
@@ -320,12 +337,12 @@ export default function Dashboard() {
                 )}
               </form>
               <form onSubmit={addIncome}>
-                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
-              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg" onClick={() => setActiveView('allocation')}>Allocation</button>
+              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button>
           </div>
         )}
 
@@ -377,7 +394,7 @@ export default function Dashboard() {
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               <form onSubmit={addBudget} className="flex flex-wrap justify-center items-center">
                 <div className="text-center mb-4">
-                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg"
+                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                     value="Add Budget" />
                   <input type="text" className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
                     placeholder="Name" value={budgetName} onChange={(e) => setBudgetName(e.target.value)} />
@@ -407,7 +424,7 @@ export default function Dashboard() {
 
           {/* Payment Section */}
           {activeView === 'payment' && (
-            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
               <form onSubmit={addPayment}>
                 <div className="text-center mb-4">
                   {/* Budget Select */}
@@ -457,7 +474,7 @@ export default function Dashboard() {
                   )}
 
                   <input type="text" className="w-1/8 bg-white p-2 m-1 text-black" placeholder="$0" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
-                  <input type="submit" className="bg-blue-200 p-2 m-2 text-blue-400 rounded-xl" value="Submit" />
+                  <input type="submit" className="bg-blue-200 p-2 m-2 text-blue-400 rounded-xl cursor-pointer" value="Submit" />
 
                 </div>
               </form>
