@@ -109,9 +109,46 @@ export default function Dashboard() {
   }, []);
 
   // Quick Glance
-  const quickGlance = "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
-  const redFlags = "Subscriptions Budget has an upcoming payment that will put the budget under $1";
-  const redPrice = "$50";
+  const quickGlance : string[]= []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
+  const redFlags : string[]= []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  
+  useEffect(() => {
+    async function fetchBudgets() {
+      if (!user) return;
+  
+      try {
+        const res = await fetch(`/api/budget?account_id=${user.account_id}`, {
+          method: 'GET',
+        });
+  
+        const data = await res.json();
+        if (res.ok) {
+          console.log('Budgets:', data.budgets);
+          setBudgets(data.budgets);
+        } else {
+          console.error('Failed to fetch budgets:', data.message);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    }
+  
+    fetchBudgets();
+  }, [user]);
+
+  function getQuickGlance(){
+    if (budgets.length == 0){
+      quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
+    }
+    else{
+    }
+  }
+  getQuickGlance();
+
+  function getRedFlags(){
+    
+  }
 
   // Budget
   type Budget = {
@@ -119,7 +156,6 @@ export default function Dashboard() {
     amount: number;
   }
 
-  const [budgets, setBudgets] = useState<Budget[]>([]);
     useEffect(() => {
       // Always keep one extra for Disposable Income
       const expectedLength = budgets.length + 1;
@@ -146,8 +182,39 @@ export default function Dashboard() {
     setBudgetName('');
     setBudgetAmount('');
   };
+  
   const removeBudget = (index: number) => {
     setBudgets(budgets.filter((_, i) => i !== index));
+  };
+
+  // add budget to database
+  const createBudget = async () => {
+    try {
+      const response = await fetch('/api/budget', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: budgetName,
+          amount: parseFloat(budgetAmount),
+        }),
+      });
+  
+      const data = await response.json();
+      console.log('Budget response:', data);
+  
+      if (response.ok) {
+        setBudgets(prev => [...prev, { name: budgetName, amount: parseFloat(budgetAmount) }]);
+        setBudgetName('');
+        setBudgetAmount('');
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create budget:', error);
+    }
   };
 
   // Income - "Update Salary"
@@ -324,7 +391,10 @@ export default function Dashboard() {
           {activeView === 'dashboard' && (
             <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
               <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
-              <p className="text-gray-600 text-sm">{quickGlance}</p>
+              <div> {quickGlance.map((msg, index) => (
+                <p key={index} className="text-gray-600 text-sm flex justify-center">{msg}</p>
+              ))}
+              </div>
             </div>
           )}
 
@@ -332,7 +402,7 @@ export default function Dashboard() {
             <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
               <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
               <div className="shadow-lg rounded-lg flex">
-                <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p>
+                {/* <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p> */}
                 <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>
               </div>
             </div>
@@ -427,7 +497,7 @@ export default function Dashboard() {
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <form onSubmit={addBudget} className="flex flex-wrap justify-center items-center">
+              <form onSubmit={(e) => {e.preventDefault(); addBudget; createBudget();}} className="flex flex-wrap justify-center items-center">
                 <div className="text-center mb-4">
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                     value="Add Budget" />
