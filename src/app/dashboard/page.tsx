@@ -61,6 +61,10 @@ export default function Dashboard() {
   const [isClient, setIsClient] = useState(false);
   const [selectedDate, setSelectedDate] = useState<DateType | [DateType, DateType]>(new Date());
 
+  const [incomeAlloc, setIncomeAlloc] = useState<number[]>([0]);
+  const totalAlloc = incomeAlloc.reduce((sum, val) => sum + val, 0);
+  const allocCheck = Math.abs(totalAlloc - 1) < 0.001;
+
   const [activeView, setActiveView] = useState('dashboard');
   const chartRef = useRef<Chart<'doughnut'> | null>(null);
 
@@ -81,6 +85,16 @@ export default function Dashboard() {
   }
 
   const [budgets, setBudgets] = useState<Budget[]>([]);
+    useEffect(() => {
+      // Always keep one extra for Disposable Income
+      const expectedLength = budgets.length + 1;
+    
+      if (incomeAlloc.length < expectedLength) {
+        setIncomeAlloc([...incomeAlloc, ...Array(expectedLength - incomeAlloc.length).fill(0)]);
+      } else if (incomeAlloc.length > expectedLength) {
+        setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
+      }
+    }, [budgets]);
 
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
@@ -96,6 +110,9 @@ export default function Dashboard() {
 
     setBudgetName('');
     setBudgetAmount('');
+  };
+  const removeBudget = (index: number) => {
+    setBudgets(budgets.filter((_, i) => i !== index));
   };
 
   // Income - "Update Salary"
@@ -192,14 +209,6 @@ export default function Dashboard() {
         return `/${occurrence}D`;
     }
   };
-
-  //const disIncome = [1000];
-
-  //const budgets = [1000, 1500, 500, 300, 500];
-  //const budgetNames = ['Utilities', 'Rent', 'Groceries', 'Dining', 'Vacation'];
-
-  //const payments = [1149.49, 80];
-  //const paymentNames = ['Rent', 'Subscriptions'];
 
   const data = {
     labels: budgets.map((budget) => budget.name),
@@ -316,9 +325,52 @@ export default function Dashboard() {
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
-              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg">Allocation</button>
+              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg" onClick={() => setActiveView('allocation')}>Allocation</button>
+          </div>
+        )}
+
+          {/* Allocation Section */}
+          {activeView === 'allocation' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              {incomeAlloc.map((alloc, index) => (
+                <div key={index} className="flex items-center bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={(alloc * 100).toFixed(0)}
+                    onChange={(e) => {
+                      const newAlloc = [...incomeAlloc];
+                      newAlloc[index] = parseFloat(e.target.value) / 100 || 0;
+                      setIncomeAlloc(newAlloc);
+                    }}
+                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                  />
+                  <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">
+                    {index === 0 ? 'Disposable Income' : budgets[index - 1]?.name || ''}
+                  </p>
+                </div>
+              ))}
+
+              <p className={`mt-2 text-sm font-medium ${allocCheck ? 'text-green-600' : 'text-red-500'}`}>
+                Total: {(totalAlloc * 100).toFixed(2)}% {!allocCheck && '(must equal 100%)'}
+              </p>
+
+              <button
+                disabled={!allocCheck}
+                onClick={() => setActiveView('income')}
+                className={`mt-4 px-4 py-2 rounded ${
+                  allocCheck
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Save Allocation
+              </button>
             </div>
           )}
+
 
           {/* Budget Section */}
           {activeView === 'budget' && (
@@ -332,19 +384,26 @@ export default function Dashboard() {
                   <input type="text" className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
                     placeholder="$0" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} />
                 </div>
-
               </form>
               <div>
                 {budgets.map((budget, index) => (
-                  <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
-                    <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget.amount}</p>
-                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
+                  <div key={index} className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                    <div className="flex items-center">
+                      <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget.amount}</p>
+                      <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
+                    </div>
+                    <button
+                      onClick={() => removeBudget(index)}
+                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>
-
             </div>
           )}
+
 
           {/* Payment Section */}
           {activeView === 'payment' && (
@@ -445,16 +504,16 @@ export default function Dashboard() {
               );
             }}
           />
-          {/* Commented out due to changes in format */}
-          
-          {/* <div className="w-3/4 bg-gray-200 m-3 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-            <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 3</p>
-            <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[0]}: ${payments[0]}</p>
-          </div>
-          <div className="w-3/4 bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-            <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">APR 10</p>
-            <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentNames[1]}: ${payments[1]}</p>
-          </div> */}
+              <div className="flex w-full p-6">
+                {payments.map((payment, index) => (
+                  <div key={index} className="flex bg-gray-100 p-2 shadow-lg rounded-xl w-full mb-4">
+                    <p className="w-full text-gray-600 p-2 m-2 text-lg rounded-xl w-1/2">{payment.budget.name}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
+
+                  </div>
+                ))}
+              </div>
         </div>
       </div>
     </div>
