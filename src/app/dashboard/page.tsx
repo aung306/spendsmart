@@ -28,6 +28,17 @@ interface DoughnutChart {
   height: number;
 }
 
+type User = {
+  account_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+};
+
+type ApiResponse = 
+  | { authenticated: true; user: User }
+  | { authenticated: false; message: string };
+
 const centerTextPlugin = {
   id: 'centerText',
   beforeDraw: (chart: DoughnutChart) => {
@@ -67,6 +78,30 @@ export default function Dashboard() {
 
   const [activeView, setActiveView] = useState('dashboard');
   const chartRef = useRef<Chart<'doughnut'> | null>(null);
+
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/me', {
+          method: 'GET',
+          credentials: 'include'
+        });
+    
+        const data: ApiResponse = await res.json();
+        console.log('API /api/me response:', data);
+    
+        if (res.ok && data.authenticated) {
+          setUser(data.user);
+        } 
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } 
+    }
+
+    fetchUser();
+  }, []);
 
   // Ensure the component is rendered only on the client-side
   useEffect(() => {
@@ -256,7 +291,6 @@ export default function Dashboard() {
   };
 
 
-
   if (!isClient) {
     return null; // Don't render anything on the server side
   }
@@ -265,6 +299,7 @@ export default function Dashboard() {
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column */}
       <div className="w-1/2">
+      <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Welcome, {user?.first_name}</h2>
         <div className="flex justify-center pt-3 pb-3">
           <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
