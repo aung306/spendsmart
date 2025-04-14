@@ -146,10 +146,6 @@ export default function Dashboard() {
   }
   getQuickGlance();
 
-  function getRedFlags(){
-    
-  }
-
   // Budget
   type Budget = {
     name: string;
@@ -260,6 +256,35 @@ export default function Dashboard() {
     setNewIncome('');
   };
 
+  // add income to database
+  const createIncome = async () => {
+    try {
+      const response = await fetch('/api/income', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: "Salary",
+          amount: parseInt(salaryAmount),
+          occurence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
+        }),
+      });
+  
+      const data = await response.json();
+      console.log('Income response:', data);
+  
+      if (response.ok) {
+        console.log("Income created!");
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create income:', error);
+    }
+  };
+
   // Payment 
   type Payment = {
     budget: Budget;
@@ -297,7 +322,7 @@ export default function Dashboard() {
     setPaymentBudget(undefined);
   };
 
-  function dashboardReturn(view : String){
+  function dashboardReturn(view : string){
     if((activeView == 'income' && view == "income")||  (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")){
       setActiveView('dashboard');
     }
@@ -411,7 +436,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={updateSalary}>
+              <form onSubmit={(e) => {e.preventDefault(); updateSalary(e); createIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -441,7 +466,7 @@ export default function Dashboard() {
                   />
                 )}
               </form>
-              <form onSubmit={addIncome}>
+              <form onSubmit={(e) => {e.preventDefault(); addIncome(e); createIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -497,7 +522,7 @@ export default function Dashboard() {
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <form onSubmit={(e) => {e.preventDefault(); addBudget; createBudget();}} className="flex flex-wrap justify-center items-center">
+              <form onSubmit={(e) => {e.preventDefault(); addBudget(e); createBudget();}} className="flex flex-wrap justify-center items-center">
                 <div className="text-center mb-4">
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                     value="Add Budget" />
