@@ -2,7 +2,15 @@
 import { NextResponse } from 'next/server';
 import { query } from '../../../backend/db';
 import { cookies } from 'next/headers';
-import { verifyToken } from '../../../middleware/auth'; // Adjust the import path as necessary
+import { verifyToken } from '../../../middleware/auth';
+
+// Define an interface for an account based on DB schema
+interface Account {
+  account_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
 
 export async function GET() {
   try {
@@ -18,7 +26,8 @@ export async function GET() {
     }
     
     const payload = verifyToken(accessToken);
-    console.log('Payload:', payload);
+    // FOR DEBUGGING IN TERMINAL
+    // console.log('Payload:', payload);
 
     if (!payload) {
       return NextResponse.json(
@@ -28,12 +37,12 @@ export async function GET() {
     }
     
     // Fetch user details from database
-    const userResult = await query(
-      'SELECT account_id, first_name, last_name, email FROM account WHERE account_id = $1',
+    const userResult = await query<Account[]>(
+      'SELECT account_id, first_name, last_name, email FROM account WHERE account_id = ?',
       [payload.userId]
     );
     
-    if (userResult.rows.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json(
         { authenticated: false, message: 'User not found' },
         { status: 404 }
@@ -43,7 +52,7 @@ export async function GET() {
     // Return user information
     return NextResponse.json({
       authenticated: true,
-      user: userResult.rows[0]
+      user: userResult[0]
     });
   } 
   catch (error) {

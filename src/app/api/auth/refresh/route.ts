@@ -1,3 +1,4 @@
+// src/app/api/auth/refresh/route.ts
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { query } from '../../../../backend/db';
@@ -17,33 +18,35 @@ export async function POST(req: Request) {
     
     // Verify the refresh token
     let payload;
-    try { payload = jwt.verify(refreshToken, JWT_SECRET) as { userId: string }; } 
-    catch {
+    try {
+      payload = jwt.verify(refreshToken, JWT_SECRET) as { userId: string };
+    } catch {
       return NextResponse.json(
         { message: 'Invalid refresh token' },
         { status: 401 }
       );
     }
     
-    // Get user information
+    // Get user info
     const result = await query(
-      'SELECT account_id, email FROM account WHERE account_id = $1',
+      'SELECT account_id, email FROM account WHERE account_id = ?',
       [payload.userId]
-    );
+    ) as Array<{ account_id: number; email: string }>;
     
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
       );
     }
     
-    const user = result.rows[0];
-    // Generate a new access token
+    const user = result[0];
+    
+    // Generate a new access token (short-lived)
     const accessToken = jwt.sign(
-      { 
+      {
         userId: user.account_id,
-        email: user.email,
+        email: user.email
       },
       JWT_SECRET,
       { expiresIn: '1h' }
