@@ -4,6 +4,7 @@
 // 2. create a feature where users can move the disposable income to their budgets 
 // 4. work on income allocations 
 // 5. work on redflags and quickglance 
+// 6. figure out how to do reoccurring salary only and not income
 
 "use client"; // Mark this file as a Client Component
 
@@ -236,12 +237,7 @@ export default function Dashboard() {
     }
   };
 
-  console.log("testing budgets array: ", budgets);
-
-  // Income - "Update Salary"
-  const [salaryAmount, setSalaryAmount] = useState('');
-  const [salaryOccurrence, setSalaryOccurrence] = useState('365');
-  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
+  // console.log("testing budgets array: ", budgets);
 
   // const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
@@ -265,10 +261,18 @@ export default function Dashboard() {
   // };
 
 
-  // Income - "Add Income"
-  const [disIncome, setDisIncome] = useState(0);
+  // Income - "Update Salary"
+  //user input
+  const [salaryAmount, setSalaryAmount] = useState('');
+  const [salaryOccurrence, setSalaryOccurrence] = useState('365');
+  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
   const [newIncome, setNewIncome] = useState('');
+  // data from query
   const [income, setIncome] = useState<Income[]>([]);
+  // total, only inc, only sal
+  const [displayIncome, setDisplayIncome] = useState(0);
+  const [inc, setInc] = useState(0);
+  const [sal, setSal] = useState(0);
   type Income = {
     name : string, 
     amount : number,
@@ -287,9 +291,19 @@ export default function Dashboard() {
 
         const data = await res.json();
         if (res.ok) {
-          console.log('Income:', data[0].amount);
+          let display = 0;
+          for (let i = 0; i < data.length; i++){
+            console.log("name: ", data[i].name);
+            if (data[i].name == "Salary"){
+              setSal(data[i].amount);
+            }
+            if (data[i].name == "Income"){
+              setInc(data[i].amount);
+            }
+            display += data[i].amount;
+          }
+          setDisplayIncome(display);
           setIncome(data);
-          setDisIncome(data[0].amount);
         } else {
           console.error('Failed to fetch budgets:', data.message);
         }
@@ -301,6 +315,7 @@ export default function Dashboard() {
     fetchIncome();
   }, [user]);
 
+// add income to database
   const addIncome = async () => {
     try {
       const response = await fetch('/api/income', {
@@ -310,8 +325,8 @@ export default function Dashboard() {
         },
         body: JSON.stringify({
           account_id: user?.account_id,
-          name: "Salary",
-          amount: disIncome + parseInt(newIncome),
+          name: "Income",
+          amount: displayIncome + parseInt(newIncome),
           occurrence: income.length > 0 ? income[0].occurrence : 365,
         }),
       });
@@ -319,7 +334,8 @@ export default function Dashboard() {
       console.log('Income response:', data);
   
       if (response.ok) {
-        setDisIncome(data.income.amount);
+        setDisplayIncome(displayIncome + parseInt(newIncome));
+        setInc(inc + parseInt(newIncome));
         console.log("Income created!");
       } else {
         console.error(data.message);
@@ -329,9 +345,8 @@ export default function Dashboard() {
     }
   };
 
-
-  // add income to database
-  const createIncome = async () => {
+  // update salary to database
+  const updateSalary = async () => {
     try {
       const response = await fetch('/api/income', {
         method: 'POST',
@@ -341,7 +356,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           account_id: user?.account_id,
           name: "Salary",
-          amount: disIncome + parseInt(salaryAmount),
+          amount: displayIncome + parseInt(salaryAmount),
           occurrence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
         }),
       });
@@ -350,8 +365,9 @@ export default function Dashboard() {
       console.log('Income response:', data);
   
       if (response.ok) {
-        setDisIncome(data.income.amount);
-        console.log("Income created!");
+        setDisplayIncome(displayIncome + parseInt(salaryAmount));
+        setSal(sal + parseInt(salaryAmount));
+        console.log("Salary updated!");
       } else {
         console.error(data.message);
       }
@@ -450,7 +466,7 @@ export default function Dashboard() {
         enabled: true,
       },
       centerText: {
-        text: `$${disIncome}`
+        text: `$${displayIncome}`
       }
     },
     cutout: '70%',
@@ -510,7 +526,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => {e.preventDefault(); createIncome();}}>
+              <form onSubmit={(e) => {e.preventDefault(); updateSalary();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
