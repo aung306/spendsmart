@@ -13,7 +13,6 @@ import Calendar from 'react-calendar';
 import { RRule } from 'rrule';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
-import { PY_WEEKDAYS } from 'rrule/dist/esm/dateutil';
 
 interface DoughnutChart {
   ctx: CanvasRenderingContext2D;
@@ -186,7 +185,7 @@ export default function Dashboard() {
   ];
   
   // Sample PaymentTest events
-  const paymentsTest = [
+  const paymentsTest : PaymentTest[] = [
     {
       budget: budgetsTest[0],
       name: "Weekly Grocery Shopping",
@@ -287,12 +286,14 @@ export default function Dashboard() {
     }
   };
 
+  // Turns 2025-04-15 into APR 15, for use in Calendar blurbs
   function getAbbreviatedDate(date: Date) {
     const monthAbbreviation = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
     const day = date.getDate();
     return `${monthAbbreviation} ${day}`;
   }
 
+  // Turns 1234 into 1,234.00, for use in formatting currency amounts
   function formatNumber(num: number) {
     return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -332,9 +333,9 @@ export default function Dashboard() {
   
   // Sort the map by the occurrence date (keys)
   const nearestPayments = Array.from(paymentDateMap.entries())
-    .sort((a, b) => a[0] - b[0]) // 
-    .slice(0, 2) // Take only the first 2 occurrences
-    .map(([_, [payment, date]]) => ({ payment, date }));
+    .sort((a, b) => a[0] - b[0]) // sort by nearest
+    .slice(0, 2) // select first two
+    .map(([, [payment, date]]) => ({ payment, date })); // remap for clarity
 
   const getOccurrenceAbbreviation = (occurrence: number): string => {
     switch (occurrence) {
@@ -624,7 +625,7 @@ export default function Dashboard() {
 
             // Create update functions for Calendar functionality
             value={selectedDate}
-            onChange={(value, _event) => {
+            onChange={(value) => {
               const date = Array.isArray(value) ? value[0] : value;
               if (
                 date instanceof Date &&
@@ -632,8 +633,9 @@ export default function Dashboard() {
                 date.toDateString() === selectedDate.toDateString()
               ) {
                 setSelectedDate(null);
-                document.activeElement instanceof HTMLElement && document.activeElement.blur();
-              } else {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+              }
+              else {
                 setSelectedDate(date);
               }
             }}
@@ -645,9 +647,8 @@ export default function Dashboard() {
               
             // Begin building tile content
             tileContent={({ date }) => {
-              // Set some variables based on tile information
+              // Set variables based on tile information
               const day = date.getDate();
-              let content = "";
               // Check if tile is validly selected
               const isSelected =
                 selectedDate instanceof Date &&
