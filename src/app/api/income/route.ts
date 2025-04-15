@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   try {
     const { account_id, name, amount, occurrence } = await req.json();
   
-    if (!account_id || !name || amount === undefined || occurrence === undefined) {
+    if (!account_id || !name || amount === null || occurrence === undefined) {
       return NextResponse.json(
         { message: 'account_id, name, amount, and occurrence are required.' },
         { status: 400 } 

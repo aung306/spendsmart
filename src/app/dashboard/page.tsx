@@ -1,5 +1,10 @@
 // src/app/dashboard/page.tsx
 
+// 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle
+// 2. create a feature where users can move the disposable income to their budgets 
+// 4. work on income allocations 
+// 5. work on redflags and quickglance 
+
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
@@ -12,6 +17,7 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
+import { userAgent } from 'next/server'
 
 // DOUGHNUT 
 interface DoughnutChart {
@@ -237,43 +243,37 @@ export default function Dashboard() {
   const [salaryOccurrence, setSalaryOccurrence] = useState('365');
   const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
 
-  const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
 
-    if (!salaryAmount || !salaryOccurrence) return;
+  //   if (!salaryAmount || !salaryOccurrence) return;
 
-    const salaryNumber = parseFloat(salaryAmount);
-    if (isNaN(salaryNumber)) return;
+  //   const salaryNumber = parseFloat(salaryAmount);
+  //   if (isNaN(salaryNumber)) return;
 
-    let salaryOccurrenceNumber: number | null = null;
-    if (salaryOccurrence == 'custom') {
-      const customNumber = parseInt(customSalaryOccurrence);
-      if (isNaN(customNumber)) return;
-      salaryOccurrenceNumber = customNumber;
-    } else {
-      salaryOccurrenceNumber = parseInt(salaryOccurrence);
-      if (isNaN(salaryOccurrenceNumber)) return;
-    }
+  //   let salaryOccurrenceNumber: number | null = null;
+  //   if (salaryOccurrence == 'custom') {
+  //     const customNumber = parseInt(customSalaryOccurrence);
+  //     if (isNaN(customNumber)) return;
+  //     salaryOccurrenceNumber = customNumber;
+  //   } else {
+  //     salaryOccurrenceNumber = parseInt(salaryOccurrence);
+  //     if (isNaN(salaryOccurrenceNumber)) return;
+  //   }
 
-    setDisIncome((prev) => (prev + salaryNumber));
-  };
+  //   setDisIncome((prev) => (prev + salaryNumber));
+  // };
 
 
   // Income - "Add Income"
   const [disIncome, setDisIncome] = useState(0);
   const [newIncome, setNewIncome] = useState('');
-
-  const addIncome = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newIncome) return;
-
-    const incomeNumber = parseFloat(newIncome);
-    if (isNaN(incomeNumber)) return;
-
-    setDisIncome((prev) => (prev + incomeNumber));
-
-    setNewIncome('');
-  };
+  const [income, setIncome] = useState<Income[]>([]);
+  type Income = {
+    name : string, 
+    amount : number,
+    occurrence : number
+  }
 
   // Get income
   useEffect(() => {
@@ -300,6 +300,35 @@ export default function Dashboard() {
     fetchIncome();
   }, [user]);
 
+  const addIncome = async () => {
+    try {
+      const response = await fetch('/api/income', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: "Salary",
+          amount: disIncome + parseInt(newIncome),
+          occurrence: income.length > 0 ? income[0].occurrence : 365,
+        }),
+      });
+      const data = await response.json();
+      console.log('Income response:', data);
+  
+      if (response.ok) {
+        setDisIncome(data.income.amount);
+        console.log("Income created!");
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create income:', error);
+    }
+  };
+
+
   // add income to database
   const createIncome = async () => {
     try {
@@ -311,7 +340,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           account_id: user?.account_id,
           name: "Salary",
-          amount: parseInt(salaryAmount),
+          amount: disIncome + parseInt(salaryAmount),
           occurrence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
         }),
       });
@@ -320,6 +349,7 @@ export default function Dashboard() {
       console.log('Income response:', data);
   
       if (response.ok) {
+        setDisIncome(data.income.amount);
         console.log("Income created!");
       } else {
         console.error(data.message);
@@ -479,7 +509,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => {e.preventDefault(); updateSalary(e); createIncome();}}>
+              <form onSubmit={(e) => {e.preventDefault(); createIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -509,7 +539,7 @@ export default function Dashboard() {
                   />
                 )}
               </form>
-              <form onSubmit={(e) => {e.preventDefault(); addIncome(e); createIncome();}}>
+              <form onSubmit={(e) => {e.preventDefault(); addIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
