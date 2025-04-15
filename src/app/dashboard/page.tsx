@@ -275,6 +275,67 @@ export default function Dashboard() {
     setPaymentBudget(undefined);
   };
 
+  // Turn occurrence keyword into a RRule object
+  const getRRuleFreq = (occurrence: string) => {
+    switch (occurrence) {
+      case 'daily': return RRule.DAILY;
+      case 'weekly': return RRule.WEEKLY;
+      case 'biweekly': return RRule.WEEKLY; // handled specially later
+      case 'monthly': return RRule.MONTHLY;
+      case 'yearly': return RRule.YEARLY;
+      default: return null; // non-repeating returns null
+    }
+  };
+
+  function getAbbreviatedDate(date: Date) {
+    const monthAbbreviation = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const day = date.getDate();
+    return `${monthAbbreviation} ${day}`;
+  }
+
+  function formatNumber(num: number) {
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Fetch nearest payments
+  const today = new Date();
+  const paymentDateMap = new Map();
+
+  // Iterate through payments to create a map of occurrence dates to payments
+  paymentsTest.forEach((payment) => {
+    const freq = getRRuleFreq(payment.occurrence);
+  
+    if (!freq) { // Handle one-time events
+      if (payment.startDate > today) {
+        paymentDateMap.set(payment.startDate, [payment, payment.startDate]);
+      }
+    } else {
+      const interval = payment.occurrence === "biweekly" ? 2 : 1; // Handle biweekly frequency
+  
+      // Create a reoccurrence rule
+      const rule = new RRule({
+        freq,
+        interval,
+        dtstart: payment.startDate,
+        until: payment.endDate,
+      });
+  
+      // Find all upcoming occurrences
+      const occurrences = rule.between(today, payment.endDate, true);
+  
+      // Add the first upcoming occurrence to the map
+      if (occurrences.length > 0) {
+        paymentDateMap.set(occurrences[0], [payment, occurrences[0]]); // Store payment with its occurrence date
+      }
+    }
+  });
+  
+  // Sort the map by the occurrence date (keys)
+  const nearestPayments = Array.from(paymentDateMap.entries())
+    .sort((a, b) => a[0] - b[0]) // 
+    .slice(0, 2) // Take only the first 2 occurrences
+    .map(([_, [payment, date]]) => ({ payment, date }));
+
   const getOccurrenceAbbreviation = (occurrence: number): string => {
     switch (occurrence) {
       case 7:
@@ -290,16 +351,6 @@ export default function Dashboard() {
     }
   };
 
-  const getRRuleFreq = (occurrence: string) => {
-    switch (occurrence) {
-      case 'daily': return RRule.DAILY;
-      case 'weekly': return RRule.WEEKLY;
-      case 'biweekly': return RRule.WEEKLY; // handled specially later
-      case 'monthly': return RRule.MONTHLY;
-      case 'yearly': return RRule.YEARLY;
-      default: return null; // non-repeating returns null
-    }
-  };
 
   const data = {
     labels: budgets.map((budget) => budget.name),
@@ -568,7 +619,6 @@ export default function Dashboard() {
 
       {/* Right Column (Rounded Box) */}
       <div className="w-[55%]">
-        <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Calendar</h2>
         <div className="bg-white p-6 rounded-4xl shadow-lg flex flex-col justify-center items-center">
           <Calendar className="mb-5"
 
@@ -656,7 +706,7 @@ export default function Dashboard() {
                     bg-gray-100 shadow-[0_6px_6px_rgba(0,0,0,0.35)] p-4 mt-1 ${paymentsOnDate.length ? "" : "hidden"} flex flex-col items-center gap-2`}>
                       {paymentsOnDate.map((payment, index) => (
                         <div key={index} className="w-full bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-                          <p className="bg-white py-2 px-5 rounded-full text-lg text-[#7c8cfd] mr-5">${payment.amount}</p>
+                          <p className="bg-white py-2 px-5 rounded-full text-lg text-[#7c8cfd] mr-5">${formatNumber(payment.amount)}</p>
                           <p className="text-md text-[#362d64] flex flex-grow justify-center text-center">{payment.name}</p>
                         </div>
                       ))}
@@ -669,13 +719,13 @@ export default function Dashboard() {
           />
 
           {/* Create list of upcoming payments below Calendar */}
-          <div className="flex w-full p-6">
-            {payments.map((payment, index) => (
-              <div key={index} className="flex bg-gray-100 p-2 shadow-lg rounded-xl w-full mb-4">
-                <p className="text-gray-600 p-2 m-2 text-lg rounded-xl w-1/2">{payment.budget.name}</p>
-                <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
-                <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
-              </div>
+          
+          <div className="flex flex-col w-full items-center">
+            {nearestPayments.map((paymentInfo, index) => (
+                <div key={index} className="w-3/4 bg-gray-200 m-1.5 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
+                    <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">{getAbbreviatedDate(paymentInfo.date)}</p>
+                    <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentInfo.payment.name}: ${formatNumber(paymentInfo.payment.amount)}</p>
+                </div>
             ))}
           </div>
         </div>
