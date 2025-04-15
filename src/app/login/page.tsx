@@ -73,7 +73,7 @@ export default function Login() {
             )}
             
             <div className="flex flex-col items-center gap-2 mb-4">
-              <label className="block text-xl font-medium text-[#7C8BFF] mb-1 font-[family-name:var(--font-coustard)]">Username/Email:</label>
+              <label className="block text-xl font-medium text-[#7C8BFF] mb-1 font-[family-name:var(--font-coustard)]">Email:</label>
               <input
                 type="email"
                 name="email"

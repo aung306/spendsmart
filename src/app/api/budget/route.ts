@@ -19,9 +19,9 @@ export async function GET(req: Request) {
 
     // get info from budget table using account_id
     const result = await query(
-      'SELECT name, amount FROM budget WHERE account_id = ?',
+      'SELECT name, amount, allocation FROM budget WHERE account_id = ?',
       [accID]
-    ) as Array<{ name: string; amount: number }>;
+    ) as Array<{ name: string; amount: number, allocation: number }>;
 
     if (result.length === 0) {
       return NextResponse.json(
@@ -52,11 +52,11 @@ export async function GET(req: Request) {
 // POST: Create a new budget using account_id, name, and amount
 export async function POST(req: Request) {
   try {
-    const { account_id, name, amount } = await req.json();
+    const { account_id, name, amount, allocation } = await req.json();
 
-    if (!account_id || !name || amount === undefined) {
+    if (!account_id || !name || amount === undefined || allocation === undefined) {
       return NextResponse.json(
-        { message: 'account_id, name, and amount are required.' },
+        { message: 'account_id, name, allocation, and amount are required.' },
         { status: 400 }
       );
     }
@@ -76,9 +76,9 @@ export async function POST(req: Request) {
 
     // Insert the new budget record and get insertID
     const result = await query(
-      `INSERT INTO budget (account_id, name, amount) 
-       VALUES (?, ?, ?)`,
-      [account_id, name, amount]
+      `INSERT INTO budget (account_id, name, amount, allocation) 
+       VALUES (?, ?, ?, ?)`,
+      [account_id, name, amount, allocation]
     ) as { insertId: number };
 
     // Return the inserted budget's information.
@@ -89,6 +89,7 @@ export async function POST(req: Request) {
         account_id: account_id,
         name: name,
         amount: amount,
+        allocation: allocation,
       },
     });
   } 
@@ -98,6 +99,34 @@ export async function POST(req: Request) {
       { 
         message: 'Database connection failed',
         error: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const budgetId = url.searchParams.get('budget_id');
+
+    if (!budgetId) {
+      return NextResponse.json(
+        { message: 'budget_id is required.' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      message: `Budget with id ${budgetId} deleted successfully.`,
+    });
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    return NextResponse.json(
+      {
+        message: 'Failed to delete budget.',
+        error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
