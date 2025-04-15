@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS account (
     last_name VARCHAR(255),
     email VARCHAR(255),
     password VARCHAR(255)
-    -- Removed income
 );
 
 CREATE TABLE IF NOT EXISTS budget (
@@ -34,6 +33,6 @@ CREATE TABLE IF NOT EXISTS income (
     account_id INT UNSIGNED,
     name VARCHAR(255) PRIMARY KEY,
     amount INT,
-    occurrence VARCHAR(255),
+    occurrence ENUM('daily', 'weekly', 'biweekly', 'monthly', 'yearly'),
     FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
