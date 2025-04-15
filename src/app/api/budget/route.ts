@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
     // get info from budget table using account_id
     const result = await query(
-      'SELECT name, amount FROM budget WHERE account_id = ?',
+      'SELECT budget_id, name, amount FROM budget WHERE account_id = ?',
       [accID]
     ) as Array<{ name: string; amount: number }>;
 
@@ -98,6 +98,39 @@ export async function POST(req: Request) {
       { 
         message: 'Database connection failed',
         error: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const budgetId = url.searchParams.get('budget_id');
+
+    if (!budgetId) {
+      return NextResponse.json(
+        { message: 'budget_id is required.' },
+        { status: 400 }
+      );
+    }
+
+    const result = await query(
+      'DELETE FROM budget WHERE budget_id = ?',
+      [budgetId]
+    );
+
+    return NextResponse.json({
+      message: `Budget with id ${budgetId} deleted successfully.`,
+    });
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    return NextResponse.json(
+      {
+        message: 'Failed to delete budget.',
+        error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );

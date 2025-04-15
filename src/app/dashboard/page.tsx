@@ -13,6 +13,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 
+// DOUGHNUT 
 interface DoughnutChart {
   ctx: CanvasRenderingContext2D;
   config: {
@@ -79,8 +80,8 @@ export default function Dashboard() {
   const [activeView, setActiveView] = useState('dashboard');
   const chartRef = useRef<Chart<'doughnut'> | null>(null);
 
+  // USER INFO 
   const [user, setUser] = useState<User | null>(null);
-
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -148,40 +149,56 @@ export default function Dashboard() {
 
   // Budget
   type Budget = {
+    budget_id : number;
     name: string;
     amount: number;
   }
 
-    useEffect(() => {
-      // Always keep one extra for Disposable Income
-      const expectedLength = budgets.length + 1;
-    
-      if (incomeAlloc.length < expectedLength) {
-        setIncomeAlloc([...incomeAlloc, ...Array(expectedLength - incomeAlloc.length).fill(0)]);
-      } else if (incomeAlloc.length > expectedLength) {
-        setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
-      }
-    }, [budgets]);
+  useEffect(() => {
+    // Always keep one extra for Disposable Income
+    const expectedLength = budgets.length + 1;
+  
+    if (incomeAlloc.length < expectedLength) {
+      setIncomeAlloc([...incomeAlloc, ...Array(expectedLength - incomeAlloc.length).fill(0)]);
+    } else if (incomeAlloc.length > expectedLength) {
+      setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
+    }
+  }, [budgets]);
 
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
 
-  const addBudget = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!budgetName || !budgetAmount) return;
+  // const addBudget = (e: React.FormEvent<HTMLFormElement>) => {
+    // e.preventDefault();
+    // if (!budgetName || !budgetAmount) return;
 
-    const amountNumber = parseFloat(budgetAmount);
-    if (isNaN(amountNumber)) return;
+    // const amountNumber = parseFloat(budgetAmount);
+    // if (isNaN(amountNumber)) return;
 
-    setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
+    // setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
 
-    setBudgetName('');
-    setBudgetAmount('');
-  };
+    // setBudgetName('');
+    // setBudgetAmount('');
+  // };
   
-  const removeBudget = (index: number) => {
-    setBudgets(budgets.filter((_, i) => i !== index));
-  };
+  async function deleteBudget(id: number) {
+    try {
+      const response = await fetch(`/api/budget?budget_id=${id}`, {
+        method: 'DELETE',
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log(data.message);
+        setBudgets(prev => prev.filter(budget => budget.budget_id !== id));
+      } else {
+        console.error(data.message); 
+      }
+    } catch (error) {
+      console.error('An error occurred while deleting the budget:', error);
+    }
+  }
 
   // add budget to database
   const createBudget = async () => {
@@ -202,7 +219,7 @@ export default function Dashboard() {
       console.log('Budget response:', data);
   
       if (response.ok) {
-        setBudgets(prev => [...prev, { name: budgetName, amount: parseFloat(budgetAmount) }]);
+        setBudgets(prev => [...prev, { budget_id: data.account.budget_id,name: budgetName, amount: parseFloat(budgetAmount) }]);
         setBudgetName('');
         setBudgetAmount('');
       } else {
@@ -212,6 +229,8 @@ export default function Dashboard() {
       console.error('Failed to create budget:', error);
     }
   };
+
+  console.log("testing budgets array: ", budgets);
 
   // Income - "Update Salary"
   const [salaryAmount, setSalaryAmount] = useState('');
@@ -256,34 +275,59 @@ export default function Dashboard() {
     setNewIncome('');
   };
 
-  // // add income to database
-  // const createIncome = async () => {
-  //   try {
-  //     const response = await fetch('/api/income', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         account_id: user?.account_id,
-  //         name: "Salary",
-  //         amount: parseInt(salaryAmount),
-  //         occurence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
-  //       }),
-  //     });
+  // Get income
+  useEffect(() => {
+    async function fetchIncome() {
+      if (!user) return;
+
+      try {
+        const res = await fetch(`/api/income?account_id=${user.account_id}`, {
+          method: 'GET',
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          console.log('Income:', data[0].amount);
+          setDisIncome(data[0].amount);
+        } else {
+          console.error('Failed to fetch budgets:', data.message);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    }
+
+    fetchIncome();
+  }, [user]);
+
+  // add income to database
+  const createIncome = async () => {
+    try {
+      const response = await fetch('/api/income', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: "Salary",
+          amount: parseInt(salaryAmount),
+          occurrence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
+        }),
+      });
   
-  //     const data = await response.json();
-  //     console.log('Income response:', data);
+      const data = await response.json();
+      console.log('Income response:', data);
   
-  //     if (response.ok) {
-  //       console.log("Income created!");
-  //     } else {
-  //       console.error(data.message);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to create income:', error);
-  //   }
-  // };
+      if (response.ok) {
+        console.log("Income created!");
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create income:', error);
+    }
+  };
 
   // Payment 
   type Payment = {
@@ -291,7 +335,6 @@ export default function Dashboard() {
     amount: number;
     occurrence: number;
   }
-
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentBudget, setPaymentBudget] = useState<Budget>();
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -436,7 +479,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={updateSalary}>
+              <form onSubmit={(e) => {e.preventDefault(); updateSalary(e); createIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -466,7 +509,7 @@ export default function Dashboard() {
                   />
                 )}
               </form>
-              <form onSubmit={addIncome}>
+              <form onSubmit={(e) => {e.preventDefault(); addIncome(e); createIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -522,7 +565,7 @@ export default function Dashboard() {
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <form onSubmit={(e) => {e.preventDefault(); addBudget(e); createBudget();}} className="flex flex-wrap justify-center items-center">
+              <form onSubmit={(e) => {e.preventDefault(); createBudget();}} className="flex flex-wrap justify-center items-center">
                 <div className="text-center mb-4">
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                     value="Add Budget" />
@@ -540,8 +583,8 @@ export default function Dashboard() {
                       <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
                     </div>
                     <button
-                      onClick={() => removeBudget(index)}
-                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100"
+                      onClick={() => deleteBudget(budget.budget_id)}
+                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
                     >
                       ✕
                     </button>
