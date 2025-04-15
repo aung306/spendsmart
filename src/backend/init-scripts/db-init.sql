@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     budget_id INT UNSIGNED,
     event_name VARCHAR(255),
-    occurrence INT,
+    occurrence VARCHAR(255),
     payment INT,
     end_date DATE,
     start_date DATE,

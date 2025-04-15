@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const budgetCheck = await query(
       'SELECT * FROM budget WHERE budget_id = ?',
       [budget_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: string; payment: number, start_date: string; end_date: string}>;
     if (budgetCheck.length === 0) {
       return NextResponse.json(
         { message: `No budget found with budget_id ${budget_id}` },
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const eventCheck = await query(
       'SELECT * FROM events WHERE event_name = ? AND budget_id = ?',
       [event_name, budget_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: string; payment: number, start_date: string; end_date: string}>;
     if (eventCheck.length > 0) {
       return NextResponse.json(
         { message: `Event with name ${event_name} already exists for the given budget` },
@@ -95,7 +95,7 @@ export async function GET(req: Request) {
     const accountCheck = await query(
       'SELECT * FROM account WHERE account_id = ?',
       [account_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: string; payment: number, start_date: string; end_date: string}>;
     if (accountCheck.length === 0) {
       return NextResponse.json(
         { message: `No account found with account_id ${account_id}` },
@@ -112,7 +112,7 @@ export async function GET(req: Request) {
        JOIN budget b ON e.budget_id = b.budget_id
        WHERE b.account_id = ?`,
       [account_id]
-    ) as Array<{ event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
+    ) as Array<{ event_id: number; budget_id: number; event_name: string; occurrence: string; payment: number, start_date: string; end_date: string}>;
     
     return NextResponse.json({
       message: 'Events retrieved successfully',
