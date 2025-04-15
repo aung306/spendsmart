@@ -10,8 +10,10 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
+import { RRule } from 'rrule';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
+import { PY_WEEKDAYS } from 'rrule/dist/esm/dateutil';
 
 interface DoughnutChart {
   ctx: CanvasRenderingContext2D;
@@ -60,7 +62,8 @@ export default function Dashboard() {
   type DateType = Date | null;
   const [isClient, setIsClient] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState<DateType | [DateType, DateType]>(new Date());
+  const [selectedDate, setSelectedDate] = useState<DateType | null>(null)
+  const [activeStartDate, setActiveStartDate] = useState<DateType>(new Date());
 
   const [incomeAlloc, setIncomeAlloc] = useState<number[]>([0]);
   const totalAlloc = incomeAlloc.reduce((sum, val) => sum + val, 0);
@@ -165,6 +168,8 @@ export default function Dashboard() {
     amount: number;
     occurrence: number;
   }
+
+  // TEST DATA -- REPLACE WITH REAL DB ROUTES
   type PaymentTest = {
     budget: Budget;
     name: string;
@@ -173,6 +178,72 @@ export default function Dashboard() {
     startDate: Date;
     endDate: Date;
   }
+  const budgetsTest = [
+    { name: "Groceries", amount: 500 },
+    { name: "Entertainment", amount: 300 },
+    { name: "Utilities", amount: 200 },
+    { name: "Savings", amount: 1000 },
+  ];
+  
+  // Sample PaymentTest events
+  const paymentsTest = [
+    {
+      budget: budgetsTest[0],
+      name: "Weekly Grocery Shopping",
+      amount: 75,
+      occurrence: "weekly",
+      startDate: new Date("2025-04-01"),
+      endDate: new Date("2025-12-31"),
+    },
+    {
+      budget: budgetsTest[1],
+      name: "Monthly Movie Subscription",
+      amount: 15,
+      occurrence: "monthly",
+      startDate: new Date("2025-03-15"),
+      endDate: new Date("2025-09-15"),
+    },
+    {
+      budget: budgetsTest[2],
+      name: "Electricity Bill",
+      amount: 100,
+      occurrence: "monthly",
+      startDate: new Date("2025-04-10"),
+      endDate: new Date("2025-10-10"),
+    },
+    {
+      budget: budgetsTest[3],
+      name: "Paycheck Savings",
+      amount: 10,
+      occurrence: "biweekly",
+      startDate: new Date("2025-04-01"),
+      endDate: new Date("2025-04-30"),
+    },
+    {
+      budget: budgetsTest[0],
+      name: "Biweekly Bulk Grocery Shopping",
+      amount: 120,
+      occurrence: "biweekly",
+      startDate: new Date("2025-04-05"),
+      endDate: new Date("2025-10-05"),
+    },
+    {
+      budget: budgetsTest[2],
+      name: "Yearly Insurance Payment",
+      amount: 1200,
+      occurrence: "yearly",
+      startDate: new Date("2025-01-01"),
+      endDate: new Date("2025-12-31"),
+    },
+    {
+      budget: budgetsTest[1],
+      name: "One-Time Concert Ticket",
+      amount: 50,
+      occurrence: "none",
+      startDate: new Date("2025-04-14"),
+      endDate: new Date("2025-04-14"),
+    }
+  ];
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentBudget, setPaymentBudget] = useState<Budget>();
@@ -219,6 +290,17 @@ export default function Dashboard() {
     }
   };
 
+  const getRRuleFreq = (occurrence: string) => {
+    switch (occurrence) {
+      case 'daily': return RRule.DAILY;
+      case 'weekly': return RRule.WEEKLY;
+      case 'biweekly': return RRule.WEEKLY; // handled specially later
+      case 'monthly': return RRule.MONTHLY;
+      case 'yearly': return RRule.YEARLY;
+      default: return null; // non-repeating returns null
+    }
+  };
+
   const data = {
     labels: budgets.map((budget) => budget.name),
     datasets: [
@@ -256,7 +338,7 @@ export default function Dashboard() {
   return (
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column */}
-      <div className="w-1/2">
+      <div className="w-[45%]">
         <div className="flex justify-center pt-3 pb-3">
           <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
@@ -485,55 +567,117 @@ export default function Dashboard() {
       </div>
 
       {/* Right Column (Rounded Box) */}
-      <div className="w-1/2">
+      <div className="w-[55%]">
         <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Calendar</h2>
         <div className="bg-white p-6 rounded-4xl shadow-lg flex flex-col justify-center items-center">
           <Calendar className="mb-5"
-            onChange={setSelectedDate}
+
+            // Create update functions for Calendar functionality
             value={selectedDate}
+            onChange={(value, _event) => {
+              const date = Array.isArray(value) ? value[0] : value;
+              if (
+                date instanceof Date &&
+                selectedDate instanceof Date &&
+                date.toDateString() === selectedDate.toDateString()
+              ) {
+                setSelectedDate(null);
+                document.activeElement instanceof HTMLElement && document.activeElement.blur();
+              } else {
+                setSelectedDate(date);
+              }
+            }}
+            onActiveStartDateChange={({ activeStartDate }) => {
+                setActiveStartDate(activeStartDate);
+                setSelectedDate(null);
+              }}
+              activeStartDate={activeStartDate || undefined}
+              
+            // Begin building tile content
             tileContent={({ date }) => {
-              // Add custom conditions for different days or dates
+              // Set some variables based on tile information
               const day = date.getDate();
+              let content = "";
+              // Check if tile is validly selected
               const isSelected =
                 selectedDate instanceof Date &&
+                selectedDate.toDateString() === date.toDateString() &&
+                selectedDate instanceof Date && activeStartDate instanceof Date &&
+                selectedDate.getMonth() === activeStartDate.getMonth() && selectedDate.getFullYear() === activeStartDate.getFullYear() &&
                 selectedDate.toDateString() === date.toDateString();
-              let content;
 
-            
-              // Example condition: Show "stuff" on the 15th and 20th of the month
-              if (day === 3 || day === 10) {
-                content = "Payment Due";
-              } else {
-                content = ""; // Or you can show something else or nothing
-              }
+              // Check which payments occur on this tile's date
+              const paymentsOnDate = paymentsTest.filter(payment => {
+                // For each payment, calculate its occurrence
+                const freq = getRRuleFreq(payment.occurrence);
+
+                if (!freq) { // handle one-time events
+                  return payment.startDate.toDateString() === date.toDateString();
+                }
+
+                const interval = payment.occurrence === "biweekly" ? 2 : 1; // handle biweekly frequency
+
+                // Create a reoccurrence rule
+                const rule = new RRule ({
+                    freq,
+                    interval,
+                    dtstart: payment.startDate,
+                    until: payment.endDate,
+                })
+
+                // Match selected tile's date to occurrences
+                const occurrences = rule.between(
+                    new Date(date.setHours(0, 0, 0, 0)),
+                    new Date(date.setHours(23, 59, 59, 999)),
+                    true // inclusive
+                );
+
+                // Filter out results in paymentsOnDate that don't occur today
+                return occurrences.length > 0;
+              })
 
               // Return tile with content
               return (
-                <div className="tile relative overflow-visible flex flex-col justify-center">
+                <div className="tile relative overflow-visible flex flex-col flex-grow justify-center">
                   <div className="tile-date-number rounded-full">{day}</div>
-                  <div className={`tile-content rounded-2xl bg-[#ebebeb] p-1 ${content ? "" : "hidden"}`}>
-                    {content}
+
+                  {/* Display budget names for any payment event on the tile */}
+                  <div className={`tile-content pt-2.5 pb-1.5 ${paymentsOnDate.length ? "" : "hidden"} font-[family-name:var(--font-coustard)]`}>
+                    {paymentsOnDate.map((payment, index) => (
+                        <div key={index} className="rounded-2xl bg-[#ebebeb] p-1 mb-1 overflow-hidden whitespace-nowrap text-ellipsis">
+                        {payment.budget.name}
+                        </div>
+                    ))}
                   </div>
+
                   {/* Show expanded info if selected */}
-                  {isSelected && content !== "" && (
-                    <div className="absolute z-50 top-full rounded-2xl left-0 w-full bg-gray-200 shadow-[0_6px_6px_rgba(0,0,0,0.3)] p-4 mt-1">
-                        payments here
+                  {isSelected && paymentsOnDate.length !== 0 && (
+                    <div className={`absolute z-50 w-[250%] top-full left-0 -translate-x-[30%] rounded-2xl 
+                    bg-gray-100 shadow-[0_6px_6px_rgba(0,0,0,0.35)] p-4 mt-1 ${paymentsOnDate.length ? "" : "hidden"} flex flex-col items-center gap-2`}>
+                      {paymentsOnDate.map((payment, index) => (
+                        <div key={index} className="w-full bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
+                          <p className="bg-white py-2 px-5 rounded-full text-lg text-[#7c8cfd] mr-5">${payment.amount}</p>
+                          <p className="text-md text-[#362d64] flex flex-grow justify-center text-center">{payment.name}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
+
                 </div>
               );
             }}
           />
-              <div className="flex w-full p-6">
-                {payments.map((payment, index) => (
-                  <div key={index} className="flex bg-gray-100 p-2 shadow-lg rounded-xl w-full mb-4">
-                    <p className="w-full text-gray-600 p-2 m-2 text-lg rounded-xl w-1/2">{payment.budget.name}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
 
-                  </div>
-                ))}
+          {/* Create list of upcoming payments below Calendar */}
+          <div className="flex w-full p-6">
+            {payments.map((payment, index) => (
+              <div key={index} className="flex bg-gray-100 p-2 shadow-lg rounded-xl w-full mb-4">
+                <p className="text-gray-600 p-2 m-2 text-lg rounded-xl w-1/2">{payment.budget.name}</p>
+                <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
+                <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
               </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
