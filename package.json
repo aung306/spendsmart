@@ -18,7 +18,8 @@
     "react": "^19.0.0",
     "react-calendar": "^5.1.0",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "rrule": "^2.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

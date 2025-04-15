@@ -28,7 +28,8 @@
 
 .tile {
     position: relative;
-    height: 5vw;
+    min-height: 6vw;
+    height: 100%;
 }
 
 .tile-date-number {
@@ -56,6 +57,14 @@
     background-color: #fff;
     border: 0.25px solid rgba(169, 169, 169, 0.5) !important;
     padding: 0px;
+    height: auto !important;
+    flex: unset !important;
+    min-width: 14.2856% !important;
+}
+
+.react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
 }
 
 .react-calendar__month-view__days__day--neighboringMonth {
@@ -103,3 +112,11 @@
     /* Weekday Bar (Mon, Tues, Wed, ...) */
     color: #7c8cfd;
 }
+
+.react-calendar__month-view__days__day {
+  overflow: visible !important;
+}
+
+.react-calendar__navigation__label {
+    pointer-events: none;
+  }
