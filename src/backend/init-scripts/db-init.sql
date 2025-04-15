@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS budget (
     account_id INT UNSIGNED,
     name VARCHAR(255),
     amount INT,
+    allocation INT,
     FOREIGN KEY (account_id) REFERENCES account(account_id)
 );
 
@@ -22,6 +23,9 @@ CREATE TABLE IF NOT EXISTS events (
     event_name VARCHAR(255),
     occurrence INT,
     payment INT,
+    end_date DATE,
+    start_date DATE,
+    CHECK (start_date <= end_date),
     -- Connected event with budget
     FOREIGN KEY (budget_id) REFERENCES budget(budget_id)
 );
@@ -30,6 +34,6 @@ CREATE TABLE IF NOT EXISTS income (
     account_id INT UNSIGNED,
     name VARCHAR(255) PRIMARY KEY,
     amount INT,
-    occurrence INT,
+    occurrence VARCHAR(255),
     FOREIGN KEY (account_id) REFERENCES account(account_id)
 );

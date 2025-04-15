@@ -7,11 +7,11 @@ import { query } from '../../../backend/db';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { budget_id, event_name, occurrence, payment } = body;
+    const { budget_id, event_name, occurrence, payment, start_date, end_date } = body;
   
-    if (!budget_id || !event_name || occurrence === undefined || payment === undefined) {
+    if (!budget_id || !event_name || occurrence === undefined || payment === undefined || start_date === undefined || end_date === undefined) {
       return NextResponse.json(
-        { message: 'budget_id, event_name, occurrence, and payment are required.' },
+        { message: 'budget_id, event_name, occurrence, start date, end date, and payment are required.' },
         { status: 400 }
       );
     }
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const budgetCheck = await query(
       'SELECT * FROM budget WHERE budget_id = ?',
       [budget_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
     if (budgetCheck.length === 0) {
       return NextResponse.json(
         { message: `No budget found with budget_id ${budget_id}` },
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const eventCheck = await query(
       'SELECT * FROM events WHERE event_name = ? AND budget_id = ?',
       [event_name, budget_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
     if (eventCheck.length > 0) {
       return NextResponse.json(
         { message: `Event with name ${event_name} already exists for the given budget` },
@@ -42,9 +42,9 @@ export async function POST(req: Request) {
   
     // Insert the new event and return insertID
     const result = await query(
-      `INSERT INTO events (budget_id, event_name, occurrence, payment) 
-       VALUES (?, ?, ?, ?)`,
-      [budget_id, event_name, occurrence, payment]
+      `INSERT INTO events (budget_id, event_name, occurrence, payment, start_date, end_date) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [budget_id, event_name, occurrence, payment, start_date, end_date]
     ) as { insertId: number };
   
     // Set up the inserted event object.
@@ -53,7 +53,9 @@ export async function POST(req: Request) {
       budget_id,
       event_name,
       occurrence,
-      payment
+      payment,
+      start_date,
+      end_date
     };
 
     return NextResponse.json({
@@ -93,7 +95,7 @@ export async function GET(req: Request) {
     const accountCheck = await query(
       'SELECT * FROM account WHERE account_id = ?',
       [account_id]
-    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number}>;
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
     if (accountCheck.length === 0) {
       return NextResponse.json(
         { message: `No account found with account_id ${account_id}` },
@@ -105,12 +107,12 @@ export async function GET(req: Request) {
     // Join the events table with the budget table on budget_id,
     // then filter by the provided account_id to get event for the budget of that person.
     const events = await query(
-      `SELECT e.event_id, e.budget_id, e.event_name, e.occurrence, e.payment 
+      `SELECT e.event_id, e.budget_id, e.event_name, e.occurrence, e.payment, e.start_date, e.end_date
        FROM events e
        JOIN budget b ON e.budget_id = b.budget_id
        WHERE b.account_id = ?`,
       [account_id]
-    ) as Array<{ event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number }>;
+    ) as Array<{ event_id: number; budget_id: number; event_name: string; occurrence: number; payment: number, start_date: string; end_date: string}>;
     
     return NextResponse.json({
       message: 'Events retrieved successfully',
