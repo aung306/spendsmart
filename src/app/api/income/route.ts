@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   try {
     const { account_id, name, amount, occurrence } = await req.json();
   
-    if (!account_id || !name || amount === undefined || occurrence === undefined) {
+    if (!account_id || !name || amount === null || occurrence === undefined) {
       return NextResponse.json(
         { message: 'account_id, name, amount, and occurrence are required.' },
         { status: 400 } 
@@ -93,22 +93,22 @@ export async function POST(req: Request) {
     
     // Check if an income record with the same name already exists.
     // Name is unique since it is a primary key
-    const incomeCheck = await query<Income[]>(
-      'SELECT * FROM income WHERE name = ?',
-      [name]
-    );
+    // const incomeCheck = await query<Income[]>(
+    //   'SELECT * FROM income WHERE name = ?',
+    //   [name]
+    // );
     
-    if (incomeCheck.length > 0) {
-      return NextResponse.json(
-        { message: `Income record with name ${name} already exists` },
-        { status: 409 }
-      );
-    }
+    // if (incomeCheck.length > 0) {
+    //   return NextResponse.json(
+    //     { message: `Income record with name ${name} already exists` },
+    //     { status: 409 }
+    //   );
+    // }
   
     // Insert the new income record and return insertID
     await query(
       `INSERT INTO income (account_id, name, amount, occurrence) 
-       VALUES (?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE account_id = VALUES(account_id), amount = VALUES(amount), occurrence = VALUES(occurrence);`,
       [account_id, name, amount, occurrence]
     );
   
