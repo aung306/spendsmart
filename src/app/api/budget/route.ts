@@ -104,3 +104,31 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const budgetId = url.searchParams.get('budget_id');
+
+    if (!budgetId) {
+      return NextResponse.json(
+        { message: 'budget_id is required.' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      message: `Budget with id ${budgetId} deleted successfully.`,
+    });
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    return NextResponse.json(
+      {
+        message: 'Failed to delete budget.',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
