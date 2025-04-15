@@ -17,7 +17,7 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
-import { userAgent } from 'next/server'
+// import { userAgent } from 'next/server'
 
 // DOUGHNUT 
 interface DoughnutChart {
@@ -288,6 +288,7 @@ export default function Dashboard() {
         const data = await res.json();
         if (res.ok) {
           console.log('Income:', data[0].amount);
+          setIncome(data);
           setDisIncome(data[0].amount);
         } else {
           console.error('Failed to fetch budgets:', data.message);

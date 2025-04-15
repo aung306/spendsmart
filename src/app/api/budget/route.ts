@@ -117,11 +117,6 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const result = await query(
-      'DELETE FROM budget WHERE budget_id = ?',
-      [budgetId]
-    );
-
     return NextResponse.json({
       message: `Budget with id ${budgetId} deleted successfully.`,
     });
