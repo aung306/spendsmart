@@ -103,3 +103,7 @@
     /* Weekday Bar (Mon, Tues, Wed, ...) */
     color: #7c8cfd;
 }
+
+.react-calendar__month-view__days__day {
+  overflow: visible !important;
+}

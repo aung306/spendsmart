@@ -59,6 +59,7 @@ const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnu
 export default function Dashboard() {
   type DateType = Date | null;
   const [isClient, setIsClient] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState<DateType | [DateType, DateType]>(new Date());
 
   const [incomeAlloc, setIncomeAlloc] = useState<number[]>([0]);
@@ -163,6 +164,14 @@ export default function Dashboard() {
     budget: Budget;
     amount: number;
     occurrence: number;
+  }
+  type PaymentTest = {
+    budget: Budget;
+    name: string;
+    amount: number;
+    occurrence: string;
+    startDate: Date;
+    endDate: Date;
   }
 
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -485,8 +494,12 @@ export default function Dashboard() {
             tileContent={({ date }) => {
               // Add custom conditions for different days or dates
               const day = date.getDate();
+              const isSelected =
+                selectedDate instanceof Date &&
+                selectedDate.toDateString() === date.toDateString();
               let content;
 
+            
               // Example condition: Show "stuff" on the 15th and 20th of the month
               if (day === 3 || day === 10) {
                 content = "Payment Due";
@@ -494,12 +507,19 @@ export default function Dashboard() {
                 content = ""; // Or you can show something else or nothing
               }
 
+              // Return tile with content
               return (
-                <div className="tile flex flex-col justify-center">
+                <div className="tile relative overflow-visible flex flex-col justify-center">
                   <div className="tile-date-number rounded-full">{day}</div>
                   <div className={`tile-content rounded-2xl bg-[#ebebeb] p-1 ${content ? "" : "hidden"}`}>
                     {content}
                   </div>
+                  {/* Show expanded info if selected */}
+                  {isSelected && content !== "" && (
+                    <div className="absolute z-50 top-full rounded-2xl left-0 w-full bg-gray-200 shadow-[0_6px_6px_rgba(0,0,0,0.3)] p-4 mt-1">
+                        payments here
+                    </div>
+                  )}
                 </div>
               );
             }}
