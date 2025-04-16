@@ -457,7 +457,7 @@ const createBudget = async () => {
   // update salary to database
   const updateSalary = async () => {
   try {
-    let occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
+    const occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
 
     // If the occurrence is "custom", use the customSalaryOccurrence
     // if (salaryOccurrence === "custom") {
