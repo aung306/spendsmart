@@ -353,6 +353,7 @@ export default function Dashboard() {
     nextYear.setFullYear(nextYear.getFullYear() + 1);
     return nextYear.toISOString().split('T')[0];
   });
+  const [customOccurrence, setCustomOccurrence] = useState('');
 
   useEffect(() => {
     async function fetchPayments() {
@@ -462,6 +463,7 @@ export default function Dashboard() {
         setPaymentName('');
         setPaymentAmount('');
         setPaymentOccurrence('');
+        setCustomOccurrence('');
         setPaymentBudgetID(undefined);
 
         console.log('Form cleared.');
