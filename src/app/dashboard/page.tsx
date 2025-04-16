@@ -1,9 +1,7 @@
 // src/app/dashboard/page.tsx
 
 // 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle/create a feature where users can move the disposable income to their budgets 
-// 6. figure out how to do reoccurring salary and divide into allocations
 // 5. work on redflags and quickglance 
-// 7. check budgets to make sure that it is under salary amount 
 
 "use client"; // Mark this file as a Client Component
 
@@ -244,6 +242,13 @@ async function deleteBudget(id: number) {
 
 // add budget to database
 const createBudget = async () => {
+  const newAmount = parseInt(budgetAmount);
+  const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
+  const updatedTotal = currentTotal + newAmount;
+  if (updatedTotal > displayIncome) {
+    alert("Budget total exceeds available income!");
+    return; 
+  }
   try {
     const response = await fetch('/api/budget', {
       method: 'POST',
@@ -265,7 +270,7 @@ const createBudget = async () => {
       setBudgets(prev => [
         ...prev,
         { 
-          budget_id: data.budget_id,  
+          budget_id: data.account.budget_id,  
           name: budgetName, 
           amount: parseFloat(budgetAmount),
           allocation: parseFloat(allocation), 
@@ -845,26 +850,26 @@ const createBudget = async () => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-
-                  // Calculate the total allocation before submitting
                   const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
-
                   if (totalAllocation !== 100) {
                     alert("Total allocation must equal 100%");
-                    return; // Prevent form submission if allocation is not 100
+                    return; 
                   }
-
-                  // If allocation is valid, proceed with creating the budget
                   createBudget();
                 }}
                 className="flex flex-wrap justify-center items-center"
               >
                 <div className="text-center mb-4">
-                  <input
-                    type="submit"
-                    className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
-                    value="Add Budget"
-                  />
+                <input
+                type="submit"
+                className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${
+                  budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+                value="Add Budget"
+                disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
+                />
                   <input
                     type="text"
                     className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"

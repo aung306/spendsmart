@@ -109,7 +109,7 @@ interface DeleteResult {
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const budgetId = url.searchParams.get('budget_id');
+    const budgetId = Number(url.searchParams.get('budget_id'));
 
     if (!budgetId) {
       return NextResponse.json(
