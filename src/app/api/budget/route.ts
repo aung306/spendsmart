@@ -61,7 +61,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if the provided account_id exists in the accounts table
     const accountCheck = await query(
       'SELECT * FROM account WHERE account_id = ?',
       [account_id]
@@ -74,14 +73,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Insert the new budget record and get insertID
     const result = await query(
       `INSERT INTO budget (account_id, name, amount, allocation) 
        VALUES (?, ?, ?, ?)`,
       [account_id, name, amount, allocation]
     ) as { insertId: number };
 
-    // Return the inserted budget's information.
     return NextResponse.json({
       message: 'Budget created successfully',
       account: {
@@ -105,6 +102,9 @@ export async function POST(req: Request) {
   }
 }
 
+interface DeleteResult {
+  affectedRows: number;
+}
 
 export async function DELETE(req: Request) {
   try {
@@ -115,6 +115,18 @@ export async function DELETE(req: Request) {
       return NextResponse.json(
         { message: 'budget_id is required.' },
         { status: 400 }
+      );
+    }
+
+    const result = await query<DeleteResult>(
+      'DELETE FROM budget WHERE budget_id = ?',
+      [budgetId]
+    );
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json(
+        { message: `No budget found with id ${budgetId}` },
+        { status: 404 }
       );
     }
 
