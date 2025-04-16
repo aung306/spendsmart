@@ -1,9 +1,9 @@
 // src/app/dashboard/page.tsx
 
-// 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle
-// 2. create a feature where users can move the disposable income to their budgets 
+// 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle/create a feature where users can move the disposable income to their budgets 
 // 6. figure out how to do reoccurring salary and divide into allocations
 // 5. work on redflags and quickglance 
+// 7. check budgets to make sure that it is under salary amount 
 
 "use client"; // Mark this file as a Client Component
 
@@ -15,7 +15,7 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
-import { RRule } from 'rrule';
+import { datetime, RRule } from 'rrule';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 // import { userAgent } from 'next/server'
@@ -176,7 +176,8 @@ export default function Dashboard() {
       setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
     }
   }, [budgets]);
-  const updateAllocations = async () => {
+
+  const updateBudget = async () => {
     try {
       for (const budget of budgets) {
         const response = await fetch('/api/budget/update', {
@@ -187,6 +188,7 @@ export default function Dashboard() {
           body: JSON.stringify({
             budget_id: budget.budget_id,
             allocation: budget.allocation,
+            amount: budget.amount
           }),
         });
   
@@ -311,7 +313,7 @@ const createBudget = async () => {
   //user input
   const [salaryAmount, setSalaryAmount] = useState('');
   const [salaryOccurrence, setSalaryOccurrence] = useState('yearly');
-  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
+  // const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
   const [newIncome, setNewIncome] = useState('');
   // data from query
   const [income, setIncome] = useState<Income[]>([]);
@@ -319,10 +321,11 @@ const createBudget = async () => {
   const [displayIncome, setDisplayIncome] = useState(0);
   const [inc, setInc] = useState(0);
   const [sal, setSal] = useState(0);
+  const [salFreq, setSalFreq] = useState('');
   type Income = {
     name : string, 
     amount : number,
-    occurrence : number
+    occurrence : string,
   }
 
   // Get income
@@ -342,6 +345,7 @@ const createBudget = async () => {
             console.log("name: ", data[i].name);
             if (data[i].name == "Salary"){
               setSal(data[i].amount);
+              setSalFreq(data[i].occurrence);
             }
             if (data[i].name == "Income"){
               setInc(data[i].amount);
@@ -397,9 +401,9 @@ const createBudget = async () => {
     let occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
 
     // If the occurrence is "custom", use the customSalaryOccurrence
-    if (salaryOccurrence === "custom") {
-      occurrenceValue = customSalaryOccurrence;
-    }
+    // if (salaryOccurrence === "custom") {
+    //   occurrenceValue = customSalaryOccurrence;
+    // }
 
     // Validate occurrenceValue to make sure it's one of the ENUM options
     const validOccurrences = ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'];
@@ -427,6 +431,7 @@ const createBudget = async () => {
     if (response.ok) {
       setDisplayIncome(displayIncome + parseInt(salaryAmount));
       setSal(sal + parseInt(salaryAmount));
+      setSalFreq(occurrenceValue);
       console.log("Salary updated!");
     } else {
       console.error(data.message);
@@ -434,8 +439,43 @@ const createBudget = async () => {
   } catch (error) {
     console.error('Failed to create income:', error);
   }
-};
+  };
 
+  // Turn occurrence keyword into a RRule object
+  const getRRuleFreq = (occurrence: string) => {
+    switch (occurrence) {
+      case 'daily': return RRule.DAILY;
+      case 'weekly': return RRule.WEEKLY;
+      case 'biweekly': return RRule.WEEKLY; // handled specially later
+      case 'monthly': return RRule.MONTHLY;
+      case 'yearly': return RRule.YEARLY;
+      default: return null; // non-repeating returns null
+    }
+  };
+
+  // splitting up salary 
+  const salaryRule = new RRule({
+    freq: getRRuleFreq(salFreq) ?? RRule.YEARLY,
+    interval: 1,
+    dtstart: datetime(2025, 1, 1), // hard coded for now 
+    until: datetime(2030, 1, 1)
+  })
+  
+  const dateReoccurrence : Date[] = salaryRule.all();
+  const dateNow = new Date();
+  for (const date of dateReoccurrence) {
+    if (date == dateNow){
+      for (let i = 0; i < budgets.length; i++) {
+        const amt = budgets[i].amount;
+        const alloc = budgets[i].allocation;
+        const newbudg = [...budgets];
+
+        newbudg[i].allocation = amt + (sal * (alloc/100));
+        setBudgets(newbudg);
+      }      
+    }
+  }  
+  
   // Payment 
   type Payment = {
     budget: Budget;
@@ -565,18 +605,6 @@ const createBudget = async () => {
       }
     }
   }
-
-  // Turn occurrence keyword into a RRule object
-  const getRRuleFreq = (occurrence: string) => {
-    switch (occurrence) {
-      case 'daily': return RRule.DAILY;
-      case 'weekly': return RRule.WEEKLY;
-      case 'biweekly': return RRule.WEEKLY; // handled specially later
-      case 'monthly': return RRule.MONTHLY;
-      case 'yearly': return RRule.YEARLY;
-      default: return null; // non-repeating returns null
-    }
-  };
 
   // Turns 2025-04-15 into APR 15, for use in Calendar blurbs
   function getAbbreviatedDate(date: Date) {
@@ -746,7 +774,7 @@ const createBudget = async () => {
                     <option value="yearly">Yearly</option>
                 </select>
 
-                {salaryOccurrence === 'custom' && (
+                {/* {salaryOccurrence === 'custom' && (
                   <input
                     type="number"
                     min="1"
@@ -755,7 +783,7 @@ const createBudget = async () => {
                     value={customSalaryOccurrence}
                     onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
                   />
-                )}
+                )} */}
               </form>
               <form onSubmit={(e) => {e.preventDefault(); addIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
@@ -906,7 +934,7 @@ const createBudget = async () => {
 
             <div className="flex justify-center mt-4">
               <button
-                onClick={updateAllocations}
+                onClick={updateBudget}
                 disabled={!isAllocationValid}
                 className={`px-4 py-2 rounded-lg ${
                   isAllocationValid
