@@ -227,7 +227,7 @@ export default function Dashboard() {
     } else if (incomeAlloc.length > expectedLength) {
       setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
     }
-  }, [budgets]);
+  }, [budgets, incomeAlloc]);
 
   const updateBudget = async () => {
     try {
