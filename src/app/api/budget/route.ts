@@ -13,27 +13,28 @@ export async function GET(req: Request) {
     if (!accID) {
       return NextResponse.json(
         { message: 'account_id is required' },
-        { status: 400 } 
+        { status: 400 } // Bad Request
       );
     }
 
+    // get info from budget table using account_id
     const result = await query(
-      'SELECT budget_id, name, amount, allocation FROM budget WHERE account_id = ?',
+      'SELECT name, amount, allocation FROM budget WHERE account_id = ?',
       [accID]
-    ) as Array<{ budget_id: number; name: string; amount: number, allocation: number }>;
+    ) as Array<{ name: string; amount: number, allocation: number }>;
 
-    // if (result.length === 0) {
-    //   return NextResponse.json(
-    //     { message: `No budget found for account_id ${accID}` },
-    //     { status: 404 } 
-    //   );
-    // }
+    if (result.length === 0) {
+      return NextResponse.json(
+        { message: `No budget found for account_id ${accID}` },
+        { status: 404 } // Not Found
+      );
+    }
 
     // Returns all budgets as an array
     return NextResponse.json({
       account_id: accID,
-      budgets: result, 
-      count: result.length,
+      budgets: result, // this returns all budgets as an array
+      count: result.length
     });
   } 
   catch (error) {
@@ -52,7 +53,6 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { account_id, name, amount, allocation } = await req.json();
-    console.log("payload: ", account_id, name, amount, allocation);
 
     if (!account_id || !name || amount === undefined || allocation === undefined) {
       return NextResponse.json(
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if the provided account_id exists in the accounts table
     const accountCheck = await query(
       'SELECT * FROM account WHERE account_id = ?',
       [account_id]
@@ -73,12 +74,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Insert the new budget record and get insertID
     const result = await query(
       `INSERT INTO budget (account_id, name, amount, allocation) 
        VALUES (?, ?, ?, ?)`,
       [account_id, name, amount, allocation]
     ) as { insertId: number };
 
+    // Return the inserted budget's information.
     return NextResponse.json({
       message: 'Budget created successfully',
       account: {
@@ -102,31 +105,16 @@ export async function POST(req: Request) {
   }
 }
 
-interface DeleteResult {
-  affectedRows: number;
-}
 
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const budgetId = Number(url.searchParams.get('budget_id'));
+    const budgetId = url.searchParams.get('budget_id');
 
     if (!budgetId) {
       return NextResponse.json(
         { message: 'budget_id is required.' },
         { status: 400 }
-      );
-    }
-
-    const result = await query<DeleteResult>(
-      'DELETE FROM budget WHERE budget_id = ?',
-      [budgetId]
-    );
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { message: `No budget found with id ${budgetId}` },
-        { status: 404 }
       );
     }
 
