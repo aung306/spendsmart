@@ -666,7 +666,6 @@ export default function Dashboard() {
 
 
   const createPayment = async () => {
-    console.log('Creating payment...');
 
     if (
       paymentBudgetID == null ||
@@ -691,7 +690,7 @@ export default function Dashboard() {
 
     const payload = {
       account_id: user?.account_id,
-      budget_id: paymentBudgetID !== undefined ? paymentBudgetID + 1 : undefined,
+      budget_id: paymentBudgetID,
       event_name: paymentName.trim(),
       payment: paymentAmountNumber,
       occurrence: paymentOccurrence,
@@ -870,9 +869,9 @@ export default function Dashboard() {
       const res = await fetch("/api/auth/logout", {
         method: "POST",
       });
-  
+
       if (res.ok) {
-        router.push("/"); 
+        router.push("/");
       } else {
         console.error("Failed to logout");
       }
@@ -923,7 +922,7 @@ export default function Dashboard() {
           Welcome, {user?.first_name}
         </h2>
 
-        
+
         <div className="flex justify-center pt-3 pb-3">
           <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
@@ -1185,22 +1184,19 @@ export default function Dashboard() {
                       <select
                         id="budgetDropdown"
                         className="w-full bg-white p-2 border rounded-lg text-blue-400 text-center"
-                        value={paymentBudgetID !== undefined ? budgets[paymentBudgetID]?.name : ''}
+                        value={paymentBudgetID ?? ''}
                         onChange={(e) => {
-                          const selectedIndex = e.target.selectedIndex - 1;
-                          setPaymentBudgetID(selectedIndex >= 0 ? selectedIndex : undefined);
+                          const selectedID = parseInt(e.target.value);
+                          setPaymentBudgetID(isNaN(selectedID) ? undefined : selectedID);
                         }}
                       >
                         <option value="" disabled hidden>Select Budget</option>
-                        {budgets.map((budget, index) => (
-                          <option key={index} value={budget.name}>
+                        {budgets.map((budget) => (
+                          <option key={budget.budget_id} value={budget.budget_id}>
                             {budget.name}
                           </option>
                         ))}
                       </select>
-
-
-
 
                     </div>
 
@@ -1285,7 +1281,7 @@ export default function Dashboard() {
                         {payment.event_name}
                       </p>
                       <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
-                        {budgets[payment.budget_id].name}
+                        {budgets.find(b => b.budget_id === payment.budget_id)?.name || 'Unknown Budget'}
                       </p>
                       <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
                         ${payment.payment}
@@ -1316,7 +1312,7 @@ export default function Dashboard() {
       <div className="w-[55%]">
         <div className="flex justify-end mb-4">
           <Link href="/">
-            <button 
+            <button
               className="bg-white text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline cursor-pointer"
               onClick={handleLogout}
             >
@@ -1400,7 +1396,7 @@ export default function Dashboard() {
                   <div className={`tile-content pt-2.5 pb-1.5 ${paymentsOnDate.length ? "" : "hidden"} font-[family-name:var(--font-coustard)]`}>
                     {paymentsOnDate.map((payment, index) => (
                       <div key={index} className="rounded-2xl bg-[#ebebeb] p-1 mb-1 overflow-hidden whitespace-nowrap text-ellipsis">
-                        {budgets[payment.budget_id].name}
+                        {budgets.find(b => b.budget_id === payment.budget_id)?.name || 'Unknown Budget'}
                       </div>
                     ))}
                   </div>
