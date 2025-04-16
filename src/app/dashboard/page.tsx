@@ -328,7 +328,7 @@ export default function Dashboard() {
         setBudgets(prev => [
           ...prev,
           {
-            budget_id: data.budget.budget_id,
+            budget_id: data.account.budget_id,
             name: budgetName,
             amount: parseFloat(budgetAmount),
             allocation: parseFloat(allocation),
@@ -666,7 +666,6 @@ export default function Dashboard() {
 
 
   const createPayment = async () => {
-    console.log('Creating payment...');
 
     if (
       paymentBudgetID == null ||
@@ -691,7 +690,7 @@ export default function Dashboard() {
 
     const payload = {
       account_id: user?.account_id,
-      budget_id: paymentBudgetID !== undefined ? paymentBudgetID + 1 : undefined,
+      budget_id: paymentBudgetID,
       event_name: paymentName.trim(),
       payment: paymentAmountNumber,
       occurrence: paymentOccurrence,
@@ -1185,10 +1184,10 @@ export default function Dashboard() {
                       <select
                         id="budgetDropdown"
                         className="w-full bg-white p-2 border rounded-lg text-blue-400 text-center"
-                        value={paymentBudgetID ?? ''} 
+                        value={paymentBudgetID ?? ''}
                         onChange={(e) => {
                           const selectedID = parseInt(e.target.value);
-                          setPaymentBudgetID(!isNaN(selectedID) ? selectedID : undefined);
+                          setPaymentBudgetID(isNaN(selectedID) ? undefined : selectedID);
                         }}
                       >
                         <option value="" disabled hidden>Select Budget</option>
@@ -1198,6 +1197,7 @@ export default function Dashboard() {
                           </option>
                         ))}
                       </select>
+
                     </div>
 
                     <div className="w-full sm:w-1/2 px-2">
