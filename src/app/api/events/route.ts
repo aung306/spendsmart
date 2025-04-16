@@ -131,3 +131,47 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const eventId = url.searchParams.get('event_id'); 
+
+    if (!eventId) {
+      return NextResponse.json(
+        { message: 'event_id is required.' },
+        { status: 400 }
+      );
+    }
+
+    const eventCheck = await query(
+      'SELECT * FROM events WHERE event_id = ?',
+      [eventId]
+    ) as Array<{event_id: number; budget_id: number; event_name: string; occurrence: string; payment: number, start_date: string; end_date: string}>;
+    
+    if (eventCheck.length === 0) {
+      return NextResponse.json(
+        { message: `No event found with event_id ${eventId}` },
+        { status: 404 }
+      );
+    }
+
+    await query(
+      'DELETE FROM events WHERE event_id = ?',
+      [eventId]
+    );
+
+    return NextResponse.json({
+      message: `Event with id ${eventId} deleted successfully.`,
+    });
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    return NextResponse.json(
+      {
+        message: 'Failed to delete event.',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
