@@ -1,8 +1,4 @@
 // src/app/dashboard/page.tsx
-
-// 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle
-// 2. create a feature where users can move the disposable income to their budgets 
-// 4. work on income allocations 
 // 5. work on redflags and quickglance 
 
 "use client"; // Mark this file as a Client Component
@@ -15,7 +11,7 @@ import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScal
 
 // Import necessary components for Calendar
 import Calendar from 'react-calendar';
-import { RRule } from 'rrule';
+import { datetime, RRule } from 'rrule';
 import 'react-calendar/dist/Calendar.css';
 import './calendar.css'
 // import { userAgent } from 'next/server'
@@ -83,8 +79,9 @@ export default function Dashboard() {
   const [activeStartDate, setActiveStartDate] = useState<DateType>(new Date());
 
   const [incomeAlloc, setIncomeAlloc] = useState<number[]>([0]);
-  const totalAlloc = incomeAlloc.reduce((sum, val) => sum + val, 0);
-  const allocCheck = Math.abs(totalAlloc - 1) < 0.001;
+  // const totalAlloc = incomeAlloc.reduce((sum, val) => sum + val, 0);
+  // const allocCheck = Math.abs(totalAlloc - 1) < 0.001;
+
 
   const [activeView, setActiveView] = useState('dashboard');
   const chartRef = useRef<Chart<'doughnut'> | null>(null);
@@ -109,20 +106,91 @@ export default function Dashboard() {
         console.error('Error fetching user:', error);
       } 
     }
-
+    
     fetchUser();
   }, []);
 
   // Ensure the component is rendered only on the client-side
   useEffect(() => {
     setIsClient(true);
-  }, []);
-
+      }, []);
+  
   // Quick Glance
   const quickGlance : string[]= []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags : string[]= []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  // function getQuickGlance(){
+  //   if (budgets.length == 0){
+  //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
+  //   }
+  //   else{
+  //   }
+  // }
+  // getQuickGlance();
   
+  // START OF BUDGETS 
+  type Budget = {
+    budget_id : number;
+    name: string;
+    amount: number;
+    allocation: number;
+  }
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  const checkAndCreateMiscBudget = async (user : User) => {
+    try {
+      const response = await fetch(`/api/budget?account_id=${user.account_id}`);
+      const data = await response.json();
+
+      if (data.budgets.length === 0) {
+        createMiscBudget(user.account_id);
+      } else {
+        setBudgets(data.budgets);
+      }
+    } catch (error) {
+      console.error("Error checking or creating budget:", error);
+    }
+  };
+
+  const createMiscBudget = async (accountId : number) => {
+    try {
+      const response = await fetch("/api/budget", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          account_id: accountId,
+          name: "Misc",
+          amount: 0,
+          allocation: 0,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBudgets((prevBudgets) => [
+          ...prevBudgets,
+          { budget_id: data.account.budget_id, 
+            name: "Misc",
+            amount: 0,
+            allocation: 0, },
+        ]);
+        console.log("Default budget created successfully");
+      } else {
+        console.error("Error creating default budget:", data.message);
+      }
+    } catch (error) {
+      console.error("Failed to create default budget:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (user !== null){
+      checkAndCreateMiscBudget(user);
+    }
+  }, [user]);
+
   useEffect(() => {
     async function fetchBudgets() {
       if (!user) return;
@@ -147,22 +215,9 @@ export default function Dashboard() {
     fetchBudgets();
   }, [user]);
 
-  function getQuickGlance(){
-    if (budgets.length == 0){
-      quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
-    }
-    else{
-    }
-  }
-  getQuickGlance();
-
-  // Budget
-  type Budget = {
-    budget_id : number;
-    name: string;
-    amount: number;
-  }
-
+  // BUDGET ALLOCATIONS
+  const [allocation, setAllocation] = useState('');
+  const isAllocationValid = Array.isArray(budgets) ? budgets.reduce((sum, b) => sum + b.allocation, 0) === 100 : 0;
   useEffect(() => {
     // Always keep one extra for Disposable Income
     const expectedLength = budgets.length + 1;
@@ -174,6 +229,34 @@ export default function Dashboard() {
     }
   }, [budgets]);
 
+  const updateBudget = async () => {
+    try {
+      for (const budget of budgets) {
+        const response = await fetch('/api/budget/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            budget_id: budget.budget_id,
+            allocation: budget.allocation,
+            amount: budget.amount
+          }),
+        });
+  
+        const data = await response.json();
+  
+        if (!response.ok) {
+          console.error(`Failed to update ${budget.name}:`, data.message);
+        }
+      }
+  
+      console.log('All budget allocations updated successfully.');
+    } catch (error) {
+      console.error('Error updating allocations:', error);
+    }
+  };
+  
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
 
@@ -190,61 +273,78 @@ export default function Dashboard() {
     // setBudgetAmount('');
   // };
   
-  async function deleteBudget(id: number) {
-    try {
-      const response = await fetch(`/api/budget?budget_id=${id}`, {
-        method: 'DELETE',
-      });
-  
-      const data = await response.json();
-  
-      if (response.ok) {
-        console.log(data.message);
-        setBudgets(prev => prev.filter(budget => budget.budget_id !== id));
-      } else {
-        console.error(data.message); 
-      }
-    } catch (error) {
-      console.error('An error occurred while deleting the budget:', error);
+// Frontend deleteBudget function
+async function deleteBudget(id: number) {
+  try {
+    const response = await fetch(`/api/budget?budget_id=${id}`, {
+      method: 'DELETE',
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log(data.message); // Log success message
+      // Update the state by filtering out the deleted budget
+      setBudgets((prev) => prev.filter((budget) => budget.budget_id !== id));
+    } else {
+      console.error(data.message); // Log error message from API
     }
+  } catch (error) {
+    console.error('An error occurred while deleting the budget:', error);
   }
+}
 
-  // add budget to database
-  const createBudget = async () => {
-    try {
-      const response = await fetch('/api/budget', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          account_id: user?.account_id,
-          name: budgetName,
+// add budget to database
+const createBudget = async () => {
+  const newAmount = parseInt(budgetAmount);
+  const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
+  const updatedTotal = currentTotal + newAmount;
+  if (updatedTotal > displayIncome) {
+    alert("Budget total exceeds available income!");
+    return; 
+  }
+  try {
+    const response = await fetch('/api/budget', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account_id: user?.account_id,
+        name: budgetName,
+        amount: parseInt(budgetAmount),  
+        allocation: parseInt(allocation),  
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Budget response:', data);
+
+    if (response.ok) {
+      setBudgets(prev => [
+        ...prev,
+        { 
+          budget_id: data.account.budget_id,  
+          name: budgetName, 
           amount: parseFloat(budgetAmount),
-        }),
-      });
-  
-      const data = await response.json();
-      console.log('Budget response:', data);
-  
-      if (response.ok) {
-        setBudgets(prev => [...prev, { budget_id: data.account.budget_id,name: budgetName, amount: parseFloat(budgetAmount) }]);
-        setBudgetName('');
-        setBudgetAmount('');
-      } else {
-        console.error(data.message);
-      }
-    } catch (error) {
-      console.error('Failed to create budget:', error);
+          allocation: parseFloat(allocation), 
+        }
+      ]);
+
+      setBudgetName('');
+      setBudgetAmount('');
+      setAllocation('');
+      setIncomeAlloc(prev => [...prev, 0]);
+    } else {
+      console.error(data.message);
     }
-  };
+  } catch (error) {
+    console.error('Failed to create budget:', error);
+  }
+};
 
-  console.log("testing budgets array: ", budgets);
 
-  // Income - "Update Salary"
-  const [salaryAmount, setSalaryAmount] = useState('');
-  const [salaryOccurrence, setSalaryOccurrence] = useState('365');
-  const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
+  // console.log("testing budgets array: ", budgets);
 
   // const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
@@ -268,14 +368,23 @@ export default function Dashboard() {
   // };
 
 
-  // Income - "Add Income"
-  const [disIncome, setDisIncome] = useState(0);
+  // START OF INCOME 
+  //user input
+  const [salaryAmount, setSalaryAmount] = useState('');
+  const [salaryOccurrence, setSalaryOccurrence] = useState('yearly');
+  // const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
   const [newIncome, setNewIncome] = useState('');
+  // data from query
   const [income, setIncome] = useState<Income[]>([]);
+  // total, only inc, only sal
+  const [displayIncome, setDisplayIncome] = useState(0);
+  const [inc, setInc] = useState(0);
+  const [sal, setSal] = useState(0);
+  const [salFreq, setSalFreq] = useState('');
   type Income = {
     name : string, 
     amount : number,
-    occurrence : number
+    occurrence : string,
   }
 
   // Get income
@@ -290,9 +399,20 @@ export default function Dashboard() {
 
         const data = await res.json();
         if (res.ok) {
-          console.log('Income:', data[0].amount);
+          let display = 0;
+          for (let i = 0; i < data.length; i++){
+            console.log("name: ", data[i].name);
+            if (data[i].name == "Salary"){
+              setSal(data[i].amount);
+              setSalFreq(data[i].occurrence);
+            }
+            if (data[i].name == "Income"){
+              setInc(data[i].amount);
+            }
+            display += data[i].amount;
+          }
+          setDisplayIncome(display);
           setIncome(data);
-          setDisIncome(data[0].amount);
         } else {
           console.error('Failed to fetch budgets:', data.message);
         }
@@ -304,6 +424,7 @@ export default function Dashboard() {
     fetchIncome();
   }, [user]);
 
+  // add income to database
   const addIncome = async () => {
     try {
       const response = await fetch('/api/income', {
@@ -313,16 +434,17 @@ export default function Dashboard() {
         },
         body: JSON.stringify({
           account_id: user?.account_id,
-          name: "Salary",
-          amount: disIncome + parseInt(newIncome),
-          occurrence: income.length > 0 ? income[0].occurrence : 365,
+          name: "Income",
+          amount: displayIncome + parseInt(newIncome),
+          occurrence: income.length > 0 ? income[0].occurrence : 'yearly',
         }),
       });
       const data = await response.json();
       console.log('Income response:', data);
   
       if (response.ok) {
-        setDisIncome(data.income.amount);
+        setDisplayIncome(displayIncome + parseInt(newIncome));
+        setInc(inc + parseInt(newIncome));
         console.log("Income created!");
       } else {
         console.error(data.message);
@@ -332,37 +454,87 @@ export default function Dashboard() {
     }
   };
 
+  // update salary to database
+  const updateSalary = async () => {
+  try {
+    const occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
 
-  // add income to database
-  const createIncome = async () => {
-    try {
-      const response = await fetch('/api/income', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          account_id: user?.account_id,
-          name: "Salary",
-          amount: disIncome + parseInt(salaryAmount),
-          occurrence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
-        }),
-      });
-  
-      const data = await response.json();
-      console.log('Income response:', data);
-  
-      if (response.ok) {
-        setDisIncome(data.income.amount);
-        console.log("Income created!");
-      } else {
-        console.error(data.message);
-      }
-    } catch (error) {
-      console.error('Failed to create income:', error);
+    // If the occurrence is "custom", use the customSalaryOccurrence
+    // if (salaryOccurrence === "custom") {
+    //   occurrenceValue = customSalaryOccurrence;
+    // }
+
+    // Validate occurrenceValue to make sure it's one of the ENUM options
+    const validOccurrences = ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'];
+    if (!validOccurrences.includes(occurrenceValue)) {
+      console.error(`Invalid occurrence value: ${occurrenceValue}`);
+      return;
+    }
+
+    const response = await fetch('/api/income', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account_id: user?.account_id,
+        name: "Salary",
+        amount: displayIncome + parseInt(salaryAmount),
+        occurrence: occurrenceValue,  // Use the validated occurrence
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Income response:', data);
+
+    if (response.ok) {
+      setDisplayIncome(displayIncome + parseInt(salaryAmount));
+      setSal(sal + parseInt(salaryAmount));
+      setSalFreq(occurrenceValue);
+      console.log("Salary updated!");
+    } else {
+      console.error(data.message);
+    }
+  } catch (error) {
+    console.error('Failed to create income:', error);
+  }
+  };
+
+  // Turn occurrence keyword into a RRule object
+  const getRRuleFreq = (occurrence: string) => {
+    switch (occurrence) {
+      case 'daily': return RRule.DAILY;
+      case 'weekly': return RRule.WEEKLY;
+      case 'biweekly': return RRule.WEEKLY; // handled specially later
+      case 'monthly': return RRule.MONTHLY;
+      case 'yearly': return RRule.YEARLY;
+      default: return null; // non-repeating returns null
     }
   };
 
+  // splitting up salary 
+  const salaryRule = new RRule({
+    freq: getRRuleFreq(salFreq) ?? RRule.YEARLY,
+    interval: 1,
+    dtstart: datetime(2025, 1, 1), // hard coded for now 
+    until: datetime(2030, 1, 1)
+  })
+  
+  const dateReoccurrence : Date[] = salaryRule.all();
+  const dateNow = new Date();
+  for (const date of dateReoccurrence) {
+    if (date == dateNow){
+      for (let i = 0; i < budgets.length; i++) {
+        const amt = budgets[i].amount;
+        const alloc = budgets[i].allocation;
+        const newbudg = [...budgets];
+
+        newbudg[i].allocation = amt + (sal * (alloc/100));
+        setBudgets(newbudg);
+      }      
+    }
+  }  
+  
   // Payment 
   type Payment = {
     budget: Budget;
@@ -380,10 +552,10 @@ export default function Dashboard() {
     endDate: Date;
   }
   const budgetsTest = [
-    { budget_id: 1, name: "Groceries", amount: 500 },
-    { budget_id: 2, name: "Entertainment", amount: 300 },
-    { budget_id: 3, name: "Utilities", amount: 200 },
-    { budget_id: 4, name: "Savings", amount: 1000 },
+    { budget_id: 1, name: "Groceries", amount: 500, allocation: 25 },
+    { budget_id: 2, name: "Entertainment", amount: 300, allocation: 25 },
+    { budget_id: 3, name: "Utilities", amount: 200, allocation: 25 },
+    { budget_id: 4, name: "Savings", amount: 1000, allocation: 25 },
   ];
   
   // Sample PaymentTest events
@@ -493,18 +665,6 @@ export default function Dashboard() {
     }
   }
 
-  // Turn occurrence keyword into a RRule object
-  const getRRuleFreq = (occurrence: string) => {
-    switch (occurrence) {
-      case 'daily': return RRule.DAILY;
-      case 'weekly': return RRule.WEEKLY;
-      case 'biweekly': return RRule.WEEKLY; // handled specially later
-      case 'monthly': return RRule.MONTHLY;
-      case 'yearly': return RRule.YEARLY;
-      default: return null; // non-repeating returns null
-    }
-  };
-
   // Turns 2025-04-15 into APR 15, for use in Calendar blurbs
   function getAbbreviatedDate(date: Date) {
     const monthAbbreviation = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
@@ -556,28 +716,28 @@ export default function Dashboard() {
     .slice(0, 2) // select first two
     .map(([, [payment, date]]) => ({ payment, date })); // remap for clarity
 
-  const getOccurrenceAbbreviation = (occurrence: number): string => {
-    switch (occurrence) {
-      case 7:
-        return '/W';
-      case 14:
-        return '/BW';
-      case 30:
-        return '/M';
-      case 365:
-        return '/Y';
-      default:
-        return `/${occurrence}D`;
-    }
-  };
+  // const getOccurrenceAbbreviation = (occurrence: number): string => {
+  //   switch (occurrence) {
+  //     case 7:
+  //       return '/W';
+  //     case 14:
+  //       return '/BW';
+  //     case 30:
+  //       return '/M';
+  //     case 365:
+  //       return '/Y';
+  //     default:
+  //       return `/${occurrence}D`;
+  //   }
+  // };
 
 
   const data = {
-    labels: budgets.map((budget) => budget.name),
+    labels: budgets.filter((budget) => budget.name !== 'Misc').map((budget) => budget.name),
     datasets: [
       {
         label: '',
-        data: budgets.map((budget) => budget.amount),
+        data: budgets.filter((budget) => budget.name !== 'Misc').map((budget) => budget.amount),
         backgroundColor: ['#E2B7F8', '#D1E8F9', '#D7A8F5', '#A0D8F1', '#7c8cfd'],
         hoverOffset: 4,
       },
@@ -594,7 +754,7 @@ export default function Dashboard() {
         enabled: true,
       },
       centerText: {
-        text: `$${disIncome}`
+        text: `$${displayIncome}`
       }
     },
     cutout: '70%',
@@ -654,7 +814,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => {e.preventDefault(); createIncome();}}>
+              <form onSubmit={(e) => {e.preventDefault(); updateSalary();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -666,14 +826,14 @@ export default function Dashboard() {
                   onChange={(e) => setSalaryOccurrence(e.target.value)}
                 >
                   <option value="" disabled hidden>Select Occurrence</option>
-                  <option value="7">Weekly</option>
-                  <option value="14">Bi-weekly</option>
-                  <option value="30">Monthly</option>
-                  <option value="365">Yearly</option>
-                  <option value="custom">Custom</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
                 </select>
 
-                {salaryOccurrence === 'custom' && (
+                {/* {salaryOccurrence === 'custom' && (
                   <input
                     type="number"
                     min="1"
@@ -682,7 +842,7 @@ export default function Dashboard() {
                     value={customSalaryOccurrence}
                     onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
                   />
-                )}
+                )} */}
               </form>
               <form onSubmit={(e) => {e.preventDefault(); addIncome();}}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
@@ -690,12 +850,12 @@ export default function Dashboard() {
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
-              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button>
+              {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
           </div>
         )}
 
           {/* Allocation Section */}
-          {activeView === 'allocation' && (
+          {/* {activeView === 'allocation' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               {incomeAlloc.map((alloc, index) => (
                 <div key={index} className="flex items-center bg-white p-2 shadow-lg rounded-xl w-full mb-4">
@@ -734,40 +894,133 @@ export default function Dashboard() {
                 Save Allocation
               </button>
             </div>
-          )}
+          )} */}
 
 
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <form onSubmit={(e) => {e.preventDefault(); createBudget();}} className="flex flex-wrap justify-center items-center">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
+                  if (totalAllocation !== 100) {
+                    alert("Total allocation must equal 100%");
+                    return; 
+                  }
+                  createBudget();
+                }}
+                className="flex flex-wrap justify-center items-center"
+              >
                 <div className="text-center mb-4">
-                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
-                    value="Add Budget" />
-                  <input type="text" className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
-                    placeholder="Name" value={budgetName} onChange={(e) => setBudgetName(e.target.value)} />
-                  <input type="text" className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
-                    placeholder="$0" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} />
+                <input
+                type="submit"
+                title="The percentage will be the percentage that is allocated to each budget from the total salary."
+                className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${
+                  budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+                value="Add Budget"  
+                disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
+                />
+                  <input
+                    type="text"
+                    className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="Name"
+                    value={budgetName}
+                    onChange={(e) => setBudgetName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="$0"
+                    value={budgetAmount}
+                    onChange={(e) => setBudgetAmount(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="100%"
+                    value={allocation}
+                    onChange={(e) => setAllocation(e.target.value)}
+                  />
                 </div>
               </form>
               <div>
-                {budgets.map((budget, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4">
-                    <div className="flex items-center">
-                      <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget.amount}</p>
-                      <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
-                    </div>
-                    <button
-                      onClick={() => deleteBudget(budget.budget_id)}
-                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
-                    >
-                      ✕
-                    </button>
+              {budgets.map((budget, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
+                >
+                  <div className="flex items-center">
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={isNaN(budget.amount) ? '' : budget.amount}
+                    onChange={(e) => {
+                      const newBudgets = [...budgets];
+                      newBudgets[index].amount = parseFloat(e.target.value);
+                      setBudgets(newBudgets);
+                    }}
+                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                  />
+
+                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
                   </div>
-                ))}
-              </div>
+
+                  {/* Input for updating budget allocation */}
+                  <div className="flex justify-end flex-grow">
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={isNaN(budget.allocation) ? '' : budget.allocation}
+                      onChange={(e) => {
+                        const newAlloc = [...budgets];
+                        newAlloc[index].allocation = parseFloat(e.target.value);
+                        setBudgets(newAlloc);
+                      }}
+                      className="w-24 bg-blue-100 text-blue-400 p-2 rounded-lg"
+                    />
+                  </div>
+
+                  {/* Delete budget */}
+                  <button
+                    onClick={() => deleteBudget(budget.budget_id)}
+                    title="This button deletes the budget entry"
+                    className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {/* Update Allocations Button */}
+              {!isAllocationValid && (
+              <p className="text-red-500 text-sm text-center">
+                Total allocation must equal 100%.
+              </p>
+            )}
+
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={updateBudget}
+                disabled={!isAllocationValid}
+                className={`px-4 py-2 rounded-lg ${
+                  isAllocationValid
+                    ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Update Budgets
+              </button>
+            </div>
+            </div>
             </div>
           )}
+
 
 
           {/* Payment Section */}
@@ -803,11 +1056,12 @@ export default function Dashboard() {
                     onChange={(e) => setPaymentOccurrence(e.target.value)}
                   >
                     <option value="" disabled hidden>Select Occurrence</option>
-                    <option value="7">Weekly</option>
-                    <option value="14">Bi-weekly</option>
-                    <option value="30">Monthly</option>
-                    <option value="365">Yearly</option>
-                    <option value="custom">Custom</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    {/* <option value="custom">Custom</option> */}
                   </select>
 
                   {paymentOccurrence === 'custom' && (
@@ -831,7 +1085,7 @@ export default function Dashboard() {
                   <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
                     <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{payment.budget.name}</p>
                     <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
+                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{payment.occurrence}</p>
                   </div>
                 ))}
               </div>
