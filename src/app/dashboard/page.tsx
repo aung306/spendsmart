@@ -1,6 +1,5 @@
 // src/app/dashboard/page.tsx
 
-// 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle/create a feature where users can move the disposable income to their budgets 
 // 5. work on redflags and quickglance 
 // 6. work on making budget amounts editable
 // 7. make tooltips for information
@@ -958,7 +957,19 @@ const createBudget = async () => {
                   className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
                 >
                   <div className="flex items-center">
-                    <p className="bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg">${budget.amount}</p>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={isNaN(budget.amount) ? '' : budget.amount}
+                    onChange={(e) => {
+                      const newBudgets = [...budgets];
+                      newBudgets[index].amount = parseFloat(e.target.value);
+                      setBudgets(newBudgets);
+                    }}
+                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                  />
+
                     <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
                   </div>
 
@@ -966,10 +977,10 @@ const createBudget = async () => {
                   <div className="flex justify-end flex-grow">
                     <input
                       type="number"
-                      step="0.01"
+                      step="1"
                       min="0"
                       max="100"
-                      value={budget.allocation}
+                      value={isNaN(budget.allocation) ? '' : budget.allocation}
                       onChange={(e) => {
                         const newAlloc = [...budgets];
                         newAlloc[index].allocation = parseFloat(e.target.value);
@@ -1005,7 +1016,7 @@ const createBudget = async () => {
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Update Allocations
+                Update Budgets
               </button>
             </div>
             </div>
