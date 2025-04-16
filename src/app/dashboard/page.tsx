@@ -8,7 +8,7 @@
 "use client"; // Mark this file as a Client Component
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useRef} from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Import necessary components from Chart.js
 import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
@@ -43,7 +43,7 @@ type User = {
   last_name: string;
 };
 
-type ApiResponse = 
+type ApiResponse =
   | { authenticated: true; user: User }
   | { authenticated: false; message: string };
 
@@ -98,16 +98,16 @@ export default function Dashboard() {
           method: 'GET',
           credentials: 'include'
         });
-    
+
         const data: ApiResponse = await res.json();
         console.log('API /api/me response:', data);
-    
+
         if (res.ok && data.authenticated) {
           setUser(data.user);
-        } 
+        }
       } catch (error) {
         console.error('Error fetching user:', error);
-      } 
+      }
     }
 
     fetchUser();
@@ -119,19 +119,19 @@ export default function Dashboard() {
   }, []);
 
   // Quick Glance
-  const quickGlance : string[]= []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
-  const redFlags : string[]= []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
+  const quickGlance: string[] = []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
+  const redFlags: string[] = []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  
+
   useEffect(() => {
     async function fetchBudgets() {
       if (!user) return;
-  
+
       try {
         const res = await fetch(`/api/budget?account_id=${user.account_id}`, {
           method: 'GET',
         });
-  
+
         const data = await res.json();
         if (res.ok) {
           console.log('Budgets:', data.budgets);
@@ -143,30 +143,31 @@ export default function Dashboard() {
         console.error('Fetch error:', error);
       }
     }
-  
+
     fetchBudgets();
   }, [user]);
 
-  function getQuickGlance(){
-    if (budgets.length == 0){
+  function getQuickGlance() {
+    if (budgets.length == 0) {
       quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
     }
-    else{
+    else {
     }
   }
   getQuickGlance();
 
   // Budget
   type Budget = {
-    budget_id : number;
+    budget_id: number;
     name: string;
+    allocation: number;
     amount: number;
   }
 
   useEffect(() => {
     // Always keep one extra for Disposable Income
     const expectedLength = budgets.length + 1;
-  
+
     if (incomeAlloc.length < expectedLength) {
       setIncomeAlloc([...incomeAlloc, ...Array(expectedLength - incomeAlloc.length).fill(0)]);
     } else if (incomeAlloc.length > expectedLength) {
@@ -177,32 +178,19 @@ export default function Dashboard() {
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
 
-  // const addBudget = (e: React.FormEvent<HTMLFormElement>) => {
-    // e.preventDefault();
-    // if (!budgetName || !budgetAmount) return;
-
-    // const amountNumber = parseFloat(budgetAmount);
-    // if (isNaN(amountNumber)) return;
-
-    // setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
-
-    // setBudgetName('');
-    // setBudgetAmount('');
-  // };
-  
   async function deleteBudget(id: number) {
     try {
       const response = await fetch(`/api/budget?budget_id=${id}`, {
         method: 'DELETE',
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         console.log(data.message);
         setBudgets(prev => prev.filter(budget => budget.budget_id !== id));
       } else {
-        console.error(data.message); 
+        console.error(data.message);
       }
     } catch (error) {
       console.error('An error occurred while deleting the budget:', error);
@@ -220,15 +208,16 @@ export default function Dashboard() {
         body: JSON.stringify({
           account_id: user?.account_id,
           name: budgetName,
-          amount: parseFloat(budgetAmount),
+          allocation: 0,
+          amount: parseFloat(budgetAmount)
         }),
       });
-  
+
       const data = await response.json();
       console.log('Budget response:', data);
-  
+
       if (response.ok) {
-        setBudgets(prev => [...prev, { budget_id: data.account.budget_id,name: budgetName, amount: parseFloat(budgetAmount) }]);
+        setBudgets(prev => [...prev, { budget_id: data.account.budget_id, name: budgetName, allocation: 0, amount: parseFloat(budgetAmount) }]);
         setBudgetName('');
         setBudgetAmount('');
       } else {
@@ -239,43 +228,19 @@ export default function Dashboard() {
     }
   };
 
-  console.log("testing budgets array: ", budgets);
-
   // Income - "Update Salary"
   const [salaryAmount, setSalaryAmount] = useState('');
   const [salaryOccurrence, setSalaryOccurrence] = useState('365');
   const [customSalaryOccurrence, setCustomSalaryOccurrence] = useState('');
-
-  // const updateSalary = (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-
-  //   if (!salaryAmount || !salaryOccurrence) return;
-
-  //   const salaryNumber = parseFloat(salaryAmount);
-  //   if (isNaN(salaryNumber)) return;
-
-  //   let salaryOccurrenceNumber: number | null = null;
-  //   if (salaryOccurrence == 'custom') {
-  //     const customNumber = parseInt(customSalaryOccurrence);
-  //     if (isNaN(customNumber)) return;
-  //     salaryOccurrenceNumber = customNumber;
-  //   } else {
-  //     salaryOccurrenceNumber = parseInt(salaryOccurrence);
-  //     if (isNaN(salaryOccurrenceNumber)) return;
-  //   }
-
-  //   setDisIncome((prev) => (prev + salaryNumber));
-  // };
-
 
   // Income - "Add Income"
   const [disIncome, setDisIncome] = useState(0);
   const [newIncome, setNewIncome] = useState('');
   const [income, setIncome] = useState<Income[]>([]);
   type Income = {
-    name : string, 
-    amount : number,
-    occurrence : number
+    name: string,
+    amount: number,
+    occurrence: number
   }
 
   // Get income
@@ -320,7 +285,7 @@ export default function Dashboard() {
       });
       const data = await response.json();
       console.log('Income response:', data);
-  
+
       if (response.ok) {
         setDisIncome(data.income.amount);
         console.log("Income created!");
@@ -345,13 +310,13 @@ export default function Dashboard() {
           account_id: user?.account_id,
           name: "Salary",
           amount: disIncome + parseInt(salaryAmount),
-          occurrence: salaryOccurrence === "custom" ? parseInt(customSalaryOccurrence) : parseInt(salaryOccurrence),
+          occurrence: "yearly"
         }),
       });
-  
+
       const data = await response.json();
       console.log('Income response:', data);
-  
+
       if (response.ok) {
         setDisIncome(data.income.amount);
         console.log("Income created!");
@@ -365,129 +330,183 @@ export default function Dashboard() {
 
   // Payment 
   type Payment = {
-    budget: Budget;
-    amount: number;
-    occurrence: number;
-  }
-
-  // TEST DATA -- REPLACE WITH REAL DB ROUTES
-  type PaymentTest = {
-    budget: Budget;
-    name: string;
-    amount: number;
+    event_id: number;
+    budget_id: number;
+    event_name: string;
+    payment: number;
     occurrence: string;
-    startDate: Date;
-    endDate: Date;
+    start_date: Date;
+    end_date: Date;
   }
-  const budgetsTest = [
-    { budget_id: 1, name: "Groceries", amount: 500 },
-    { budget_id: 2, name: "Entertainment", amount: 300 },
-    { budget_id: 3, name: "Utilities", amount: 200 },
-    { budget_id: 4, name: "Savings", amount: 1000 },
-  ];
-  
-  // Sample PaymentTest events
-  const paymentsTest : PaymentTest[] = [
-    {
-      budget: budgetsTest[0],
-      name: "Weekly Grocery Shopping",
-      amount: 75,
-      occurrence: "weekly",
-      startDate: new Date("2025-04-01"),
-      endDate: new Date("2025-12-31"),
-    },
-    {
-      budget: budgetsTest[1],
-      name: "Monthly Movie Subscription",
-      amount: 15,
-      occurrence: "monthly",
-      startDate: new Date("2025-03-15"),
-      endDate: new Date("2025-09-15"),
-    },
-    {
-      budget: budgetsTest[2],
-      name: "Electricity Bill",
-      amount: 100,
-      occurrence: "monthly",
-      startDate: new Date("2025-04-10"),
-      endDate: new Date("2025-10-10"),
-    },
-    {
-      budget: budgetsTest[3],
-      name: "Paycheck Savings",
-      amount: 10,
-      occurrence: "biweekly",
-      startDate: new Date("2025-04-01"),
-      endDate: new Date("2025-04-30"),
-    },
-    {
-      budget: budgetsTest[0],
-      name: "Biweekly Bulk Grocery Shopping",
-      amount: 120,
-      occurrence: "biweekly",
-      startDate: new Date("2025-04-05"),
-      endDate: new Date("2025-10-05"),
-    },
-    {
-      budget: budgetsTest[2],
-      name: "Yearly Insurance Payment",
-      amount: 1200,
-      occurrence: "yearly",
-      startDate: new Date("2025-01-01"),
-      endDate: new Date("2025-12-31"),
-    },
-    {
-      budget: budgetsTest[1],
-      name: "One-Time Concert Ticket",
-      amount: 50,
-      occurrence: "none",
-      startDate: new Date("2025-04-14"),
-      endDate: new Date("2025-04-14"),
-    }
-  ];
 
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [paymentBudget, setPaymentBudget] = useState<Budget>();
+  const [paymentBudgetID, setPaymentBudgetID] = useState<number | undefined>(undefined);
+  const [paymentName, setPaymentName] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentOccurrence, setPaymentOccurrence] = useState('');
+  const [paymentStartDate, setPaymentStartDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [paymentEndDate, setPaymentEndDate] = useState(() => {
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    return nextYear.toISOString().split('T')[0];
+  });
   const [customOccurrence, setCustomOccurrence] = useState('');
 
-  const addPayment = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!paymentBudget || !paymentAmount || !paymentOccurrence) return;
+  useEffect(() => {
+    async function fetchPayments() {
+      if (!user) return;
 
-    const paymentAmountNumber = parseFloat(paymentAmount);
-    if (isNaN(paymentAmountNumber)) return;
+      try {
+        const res = await fetch(`/api/events?account_id=${user.account_id}`, {
+          method: 'GET',
+        });
 
-    let paymentOccurrenceNumber: number | null = null;
-    if (paymentOccurrence === 'custom') {
-      const customNumber = parseInt(customOccurrence);
-      if (isNaN(customNumber)) return;
-      paymentOccurrenceNumber = customNumber;
-    } else {
-      paymentOccurrenceNumber = parseInt(paymentOccurrence);
-      if (isNaN(paymentOccurrenceNumber)) return;
+        const data = await res.json();
+        if (res.ok) {
+          const paymentsWithDates: Payment[] = data.events.map((event: Omit<Payment, 'start_date' | 'end_date'> & {
+            start_date: string;
+            end_date: string;
+          }) => ({
+            ...event,
+            start_date: new Date(event.start_date),
+            end_date: new Date(event.end_date),
+          }));
+
+          console.log('Parsed payments:', paymentsWithDates);
+          setPayments(paymentsWithDates);
+        } else {
+          console.error('Failed to fetch payments:', data.message);
+        }
+      } catch (error) {
+        console.error('Payments fetch error:', error);
+      }
     }
 
-    setPayments([...payments, { budget: paymentBudget, amount: paymentAmountNumber, occurrence: paymentOccurrenceNumber }]);
-    setPaymentAmount('');
-    setPaymentOccurrence('');
-    setCustomOccurrence('');
-    setPaymentBudget(undefined);
-  };
+    fetchPayments();
+  }, [user]);
 
-  function dashboardReturn(view : string){
-    if((activeView == 'income' && view == "income")||  (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")){
+
+  const createPayment = async () => {
+    console.log('Creating payment...');
+
+    if (
+      paymentBudgetID == null ||
+      !paymentAmount ||
+      !paymentOccurrence ||
+      !paymentName ||
+      !paymentStartDate ||
+      !paymentEndDate
+    ) {
+      console.warn('Missing required fields:');
+      return;
+    }
+
+    const paymentAmountNumber = parseInt(paymentAmount);
+    if (isNaN(paymentAmountNumber)) {
+      console.error('Invalid payment amount:', paymentAmount);
+      return;
+    }
+
+    const startDate = new Date(paymentStartDate);
+    const endDate = new Date(paymentEndDate);
+
+    const payload = {
+      account_id: user?.account_id,
+      budget_id: paymentBudgetID !== undefined ? paymentBudgetID + 1 : undefined,
+      event_name: paymentName.trim(),
+      payment: paymentAmountNumber,
+      occurrence: paymentOccurrence,
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
+    };
+
+    console.log('Sending payload to /api/events:', payload);
+
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('Response from server:', data);
+
+      if (response.ok) {
+        console.log('Payment creation successful. Updating local state...');
+        const startDate2 = new Date(`${paymentStartDate}T00:00:00`);
+        const endDate2 = new Date(`${paymentEndDate}T00:00:00`);
+
+        setPayments(prev => [
+          ...prev,
+          {
+            event_id: data.event?.event_id ?? Math.random(),
+            budget_id: paymentBudgetID,
+            event_name: paymentName.trim(),
+            payment: paymentAmountNumber,
+            occurrence: paymentOccurrence,
+            start_date: startDate2,
+            end_date: endDate2,
+
+          },
+        ]);
+
+
+        console.log(payments);
+
+        // Clear form fields
+        setPaymentName('');
+        setPaymentAmount('');
+        setPaymentOccurrence('');
+        setCustomOccurrence('');
+        setPaymentBudgetID(undefined);
+
+        console.log('Form cleared.');
+      } else {
+        console.error('Server error:', data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create payment:', error);
+    }
+  };
+  
+  async function deletePayment(id: number) {
+    try {
+      const response = await fetch(`/api/events?event_id=${id}`, {
+        method: 'DELETE',
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        console.log(data.message);
+        setPayments(prev => prev.filter(event => event.event_id !== id)); 
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('An error occurred while deleting the payment:', error);
+    }
+  }
+  
+
+  function dashboardReturn(view: string) {
+    if ((activeView == 'income' && view == "income") || (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")) {
       setActiveView('dashboard');
     }
-    else{
-      if(view == "income"){
+    else {
+      if (view == "income") {
         setActiveView('income');
       }
-      if(view == "budget"){
+      if (view == "budget") {
         setActiveView('budget');
       }
-      if(view == "payment"){
+      if (view == "payment") {
         setActiveView('payment');
       }
     }
@@ -513,61 +532,70 @@ export default function Dashboard() {
   }
 
   // Turns 1234 into 1,234.00, for use in formatting currency amounts
-  function formatNumber(num: number) {
-    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function formatNumber(num: number | undefined | null) {
+    if (typeof num !== 'number' || isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   }
+  
 
   // Fetch nearest payments
   const today = new Date();
   const paymentDateMap = new Map();
 
   // Iterate through payments to create a map of occurrence dates to payments
-  paymentsTest.forEach((payment) => {
+  payments.forEach((payment) => {
     const freq = getRRuleFreq(payment.occurrence);
-  
+
     if (!freq) { // Handle one-time events
-      if (payment.startDate > today) {
-        paymentDateMap.set(payment.startDate, [payment, payment.startDate]);
+      if (payment.start_date > today) {
+        paymentDateMap.set(payment.start_date, [payment, payment.start_date]);
       }
     } else {
       const interval = payment.occurrence === "biweekly" ? 2 : 1; // Handle biweekly frequency
-  
+
       // Create a reoccurrence rule
       const rule = new RRule({
         freq,
         interval,
-        dtstart: payment.startDate,
-        until: payment.endDate,
+        dtstart: new Date(payment.start_date),
+        until: new Date(payment.end_date),
       });
-  
+
       // Find all upcoming occurrences
-      const occurrences = rule.between(today, payment.endDate, true);
-  
+      const occurrences = rule.between(today, payment.end_date, true);
+
       // Add the first upcoming occurrence to the map
       if (occurrences.length > 0) {
         paymentDateMap.set(occurrences[0], [payment, occurrences[0]]); // Store payment with its occurrence date
       }
     }
   });
-  
+
   // Sort the map by the occurrence date (keys)
   const nearestPayments = Array.from(paymentDateMap.entries())
     .sort((a, b) => a[0] - b[0]) // sort by nearest
     .slice(0, 2) // select first two
     .map(([, [payment, date]]) => ({ payment, date })); // remap for clarity
 
-  const getOccurrenceAbbreviation = (occurrence: number): string => {
+  const getOccurrenceAbbreviation = (occurrence: string): string => {
     switch (occurrence) {
-      case 7:
+      case 'none':
+        return 'Once';
+      case 'daily':
+        return '/D'
+      case 'weekly':
         return '/W';
-      case 14:
+      case 'biweekly':
         return '/BW';
-      case 30:
+      case 'monthly':
         return '/M';
-      case 365:
+      case 'yearly':
         return '/Y';
       default:
-        return `/${occurrence}D`;
+        return "";
     }
   };
 
@@ -609,7 +637,7 @@ export default function Dashboard() {
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column */}
       <div className="w-[45%]">
-      <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Welcome, {user?.first_name}</h2>
+        <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Welcome, {user?.first_name}</h2>
         <div className="flex justify-center pt-3 pb-3">
           <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
@@ -626,7 +654,7 @@ export default function Dashboard() {
                 onClick={() => dashboardReturn("income")}>Income</button>
               <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
                 onClick={() => dashboardReturn("budget")}>Budget</button>
-              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer" 
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
                 onClick={() => dashboardReturn("payment")}>Payment</button>
             </div>
           </div>
@@ -654,7 +682,7 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => {e.preventDefault(); createIncome();}}>
+              <form onSubmit={(e) => { e.preventDefault(); createIncome(); }}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -684,15 +712,15 @@ export default function Dashboard() {
                   />
                 )}
               </form>
-              <form onSubmit={(e) => {e.preventDefault(); addIncome();}}>
+              <form onSubmit={(e) => { e.preventDefault(); addIncome(); }}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
               <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button>
-          </div>
-        )}
+            </div>
+          )}
 
           {/* Allocation Section */}
           {activeView === 'allocation' && (
@@ -725,11 +753,10 @@ export default function Dashboard() {
               <button
                 disabled={!allocCheck}
                 onClick={() => setActiveView('income')}
-                className={`mt-4 px-4 py-2 rounded ${
-                  allocCheck
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                className={`mt-4 px-4 py-2 rounded ${allocCheck
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 Save Allocation
               </button>
@@ -740,7 +767,7 @@ export default function Dashboard() {
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <form onSubmit={(e) => {e.preventDefault(); createBudget();}} className="flex flex-wrap justify-center items-center">
+              <form onSubmit={(e) => { e.preventDefault(); createBudget(); }} className="flex flex-wrap justify-center items-center">
                 <div className="text-center mb-4">
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                     value="Add Budget" />
@@ -773,68 +800,136 @@ export default function Dashboard() {
           {/* Payment Section */}
           {activeView === 'payment' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={addPayment}>
+              <form onSubmit={(e) => { e.preventDefault(); createPayment(); }}>
                 <div className="text-center mb-4">
-                  {/* Budget Select */}
-                  <select
-                    id="budgetDropdown"
-                    className="bg-white p-2 m-1 border rounded-lg text-blue-400"
-                    value={paymentBudget?.name || ''}
-                    onChange={(e) => {
-                      const selectedName = e.target.value;
-                      const selectedBudget = budgets.find((b) => b.name === selectedName);
-                      if (selectedBudget) {
-                        setPaymentBudget(selectedBudget);
-                      }
-                    }}
-                  >
-                    <option value="" disabled hidden>Select Budget</option>
-                    {budgets.map((budget, index) => (
-                      <option key={index} value={budget.name}>
-                        {budget.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-wrap justify-between my-2">
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label className="block text-sm text-gray-600 mb-1">Budget</label>
+                      <select
+                        id="budgetDropdown"
+                        className="w-full bg-white p-2 border rounded-lg text-blue-400 text-center"
+                        value={paymentBudgetID !== undefined ? budgets[paymentBudgetID]?.name : ''} 
+                        onChange={(e) => {
+                          const selectedIndex = e.target.selectedIndex - 1; 
+                          setPaymentBudgetID(selectedIndex >= 0 ? selectedIndex : undefined);  
+                        }}
+                      >
+                        <option value="" disabled hidden>Select Budget</option>
+                        {budgets.map((budget, index) => (
+                          <option key={index} value={budget.name}>
+                            {budget.name}
+                          </option>
+                        ))}
+                      </select>
 
-                  {/* Occurrence Select */}
-                  <select
-                    className="bg-white p-2 m-1 border rounded-lg text-blue-400"
-                    value={paymentOccurrence || ''}
-                    onChange={(e) => setPaymentOccurrence(e.target.value)}
-                  >
-                    <option value="" disabled hidden>Select Occurrence</option>
-                    <option value="7">Weekly</option>
-                    <option value="14">Bi-weekly</option>
-                    <option value="30">Monthly</option>
-                    <option value="365">Yearly</option>
-                    <option value="custom">Custom</option>
-                  </select>
 
-                  {paymentOccurrence === 'custom' && (
+
+
+                    </div>
+
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label className="block text-sm text-gray-600 mb-1">Occurrence</label>
+                      <select
+                        className="w-full bg-white p-2 border rounded-lg text-blue-400 text-center"
+                        value={paymentOccurrence || ''}
+                        onChange={(e) => setPaymentOccurrence(e.target.value)}
+                      >
+                        <option value="" disabled hidden>Select Occurrence</option>
+                        <option value="none">Just Once</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Bi-weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap justify-between my-2">
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label className="block text-sm text-gray-600 mb-1">Name</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white p-2 text-black rounded text-center"
+                        placeholder="ex. Grocery Shopping"
+                        value={paymentName}
+                        onChange={(e) => setPaymentName(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label className="block text-sm text-gray-600 mb-1">Amount</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white p-2 text-black rounded text-center"
+                        placeholder="$0"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap justify-between my-2">
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label htmlFor="startDate" className="block text-sm text-gray-600 mb-1">Start Date</label>
+                      <input
+                        id="startDate"
+                        type="date"
+                        className="bg-white p-2 text-black rounded text-center"
+                        value={paymentStartDate}
+                        onChange={(e) => setPaymentStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-full sm:w-1/2 px-2">
+                      <label htmlFor="endDate" className="block text-sm text-gray-600 mb-1">End Date</label>
+                      <input
+                        id="endDate"
+                        type="date"
+                        className=" bg-white p-2 text-black rounded text-center"
+                        value={paymentEndDate}
+                        onChange={(e) => setPaymentEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="my-3">
                     <input
-                      type="number"
-                      min="1"
-                      className="w-1/10 bg-white p-2 m-2 text-black"
-                      placeholder="1"
-                      value={customOccurrence}
-                      onChange={(e) => setCustomOccurrence(e.target.value)}
+                      type="submit"
+                      className="bg-blue-200 px-6 py-2 text-blue-400 rounded-xl cursor-pointer"
+                      value="Add Payment"
                     />
-                  )}
-
-                  <input type="text" className="w-1/8 bg-white p-2 m-1 text-black" placeholder="$0" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
-                  <input type="submit" className="bg-blue-200 p-2 m-2 text-blue-400 rounded-xl cursor-pointer" value="Submit" />
-
+                  </div>
                 </div>
               </form>
               <div>
                 {payments.map((payment, index) => (
-                  <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4">
-                    <p className="text-gray-600 p-2 m-2 rounded-xl w-1/2">{payment.budget.name}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">${payment.amount}</p>
-                    <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl">{getOccurrenceAbbreviation(payment.occurrence)}</p>
+                  <div key={index} className="flex bg-white p-2 shadow-lg rounded-xl w-full mb-4 items-center">
+                    <div className="flex-grow">
+                      <p className="text-gray-600 p-2 m-2 rounded-xl font-semibold">
+                        {payment.event_name}
+                      </p>
+                      <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
+                        {budgets[payment.budget_id].name}
+                      </p>
+                      <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
+                        ${payment.payment}
+                      </p>
+                      <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
+                        {getOccurrenceAbbreviation(payment.occurrence)}
+                      </p>
+                      <p className="bg-blue-100 p-2 m-2 text-gray-600 rounded-xl inline-block">
+                        {new Date(payment.start_date).toLocaleDateString()} to {new Date(payment.end_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deletePayment(payment.event_id)}
+                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer self-start"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>
+
             </div>
           )}
         </div>
@@ -862,11 +957,11 @@ export default function Dashboard() {
               }
             }}
             onActiveStartDateChange={({ activeStartDate }) => {
-                setActiveStartDate(activeStartDate);
-                setSelectedDate(null);
-              }}
-              activeStartDate={activeStartDate || undefined}
-              
+              setActiveStartDate(activeStartDate);
+              setSelectedDate(null);
+            }}
+            activeStartDate={activeStartDate || undefined}
+
             // Begin building tile content
             tileContent={({ date }) => {
               // Set variables based on tile information
@@ -880,29 +975,29 @@ export default function Dashboard() {
                 selectedDate.toDateString() === date.toDateString();
 
               // Check which payments occur on this tile's date
-              const paymentsOnDate = paymentsTest.filter(payment => {
+              const paymentsOnDate = payments.filter(payment => {
                 // For each payment, calculate its occurrence
                 const freq = getRRuleFreq(payment.occurrence);
 
                 if (!freq) { // handle one-time events
-                  return payment.startDate.toDateString() === date.toDateString();
+                  return payment.start_date.toDateString() === date.toDateString();
                 }
 
                 const interval = payment.occurrence === "biweekly" ? 2 : 1; // handle biweekly frequency
 
                 // Create a reoccurrence rule
-                const rule = new RRule ({
-                    freq,
-                    interval,
-                    dtstart: payment.startDate,
-                    until: payment.endDate,
+                const rule = new RRule({
+                  freq,
+                  interval,
+                  dtstart: payment.start_date,
+                  until: payment.end_date,
                 })
 
                 // Match selected tile's date to occurrences
                 const occurrences = rule.between(
-                    new Date(date.setHours(0, 0, 0, 0)),
-                    new Date(date.setHours(23, 59, 59, 999)),
-                    true // inclusive
+                  new Date(date.setHours(0, 0, 0, 0)),
+                  new Date(date.setHours(23, 59, 59, 999)),
+                  true // inclusive
                 );
 
                 // Filter out results in paymentsOnDate that don't occur today
@@ -917,9 +1012,9 @@ export default function Dashboard() {
                   {/* Display budget names for any payment event on the tile */}
                   <div className={`tile-content pt-2.5 pb-1.5 ${paymentsOnDate.length ? "" : "hidden"} font-[family-name:var(--font-coustard)]`}>
                     {paymentsOnDate.map((payment, index) => (
-                        <div key={index} className="rounded-2xl bg-[#ebebeb] p-1 mb-1 overflow-hidden whitespace-nowrap text-ellipsis">
-                        {payment.budget.name}
-                        </div>
+                      <div key={index} className="rounded-2xl bg-[#ebebeb] p-1 mb-1 overflow-hidden whitespace-nowrap text-ellipsis">
+                        {budgets[payment.budget_id].name}
+                      </div>
                     ))}
                   </div>
 
@@ -929,8 +1024,8 @@ export default function Dashboard() {
                     bg-gray-100 shadow-[0_6px_6px_rgba(0,0,0,0.35)] p-4 mt-1 ${paymentsOnDate.length ? "" : "hidden"} flex flex-col items-center gap-2`}>
                       {paymentsOnDate.map((payment, index) => (
                         <div key={index} className="w-full bg-gray-200 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-                          <p className="bg-white py-2 px-5 rounded-full text-lg text-[#7c8cfd] mr-5">${formatNumber(payment.amount)}</p>
-                          <p className="text-md text-[#362d64] flex flex-grow justify-center text-center">{payment.name}</p>
+                          <p className="bg-white py-2 px-5 rounded-full text-lg text-[#7c8cfd] mr-5">${formatNumber(payment.payment)}</p>
+                          <p className="text-md text-[#362d64] flex flex-grow justify-center text-center">{payment.event_name}</p>
                         </div>
                       ))}
                     </div>
@@ -942,13 +1037,13 @@ export default function Dashboard() {
           />
 
           {/* Create list of upcoming payments below Calendar */}
-          
+
           <div className="flex flex-col w-full items-center">
             {nearestPayments.map((paymentInfo, index) => (
-                <div key={index} className="w-3/4 bg-gray-200 m-1.5 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
-                    <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">{getAbbreviatedDate(paymentInfo.date)}</p>
-                    <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentInfo.payment.name}: ${formatNumber(paymentInfo.payment.amount)}</p>
-                </div>
+              <div key={index} className="w-3/4 bg-gray-200 m-1.5 p-3 rounded-full flex items-center font-[family-name:var(--font-coustard)]">
+                <p className="bg-white py-2 px-5 rounded-full text-l text-[#7c8cfd] mr-5">{getAbbreviatedDate(paymentInfo.date)}</p>
+                <p className="text-xl text-[#362d64] flex flex-grow justify-center text-center">{paymentInfo.payment.event_name}: ${formatNumber(paymentInfo.payment.payment)}</p>
+              </div>
             ))}
           </div>
         </div>
