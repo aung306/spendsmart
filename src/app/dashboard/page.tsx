@@ -2,6 +2,8 @@
 
 // 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle/create a feature where users can move the disposable income to their budgets 
 // 5. work on redflags and quickglance 
+// 6. work on making budget amounts editable
+// 7. make tooltips for information
 
 "use client"; // Mark this file as a Client Component
 
@@ -111,11 +113,11 @@ export default function Dashboard() {
     
     fetchUser();
   }, []);
-  
+
   // Ensure the component is rendered only on the client-side
   useEffect(() => {
     setIsClient(true);
-  }, []);
+      }, []);
   
   // Quick Glance
   const quickGlance : string[]= []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
@@ -137,6 +139,62 @@ export default function Dashboard() {
     allocation: number;
   }
   const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  const checkAndCreateMiscBudget = async (user : User) => {
+    try {
+      const response = await fetch(`/api/budget?account_id=${user.account_id}`);
+      const data = await response.json();
+
+      if (data.budgets.length === 0) {
+        createMiscBudget(user.account_id);
+      } else {
+        setBudgets(data.budgets);
+      }
+    } catch (error) {
+      console.error("Error checking or creating budget:", error);
+    }
+  };
+
+  const createMiscBudget = async (accountId : number) => {
+    try {
+      const response = await fetch("/api/budget", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          account_id: accountId,
+          name: "Misc",
+          amount: 0,
+          allocation: 0,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBudgets((prevBudgets) => [
+          ...prevBudgets,
+          { budget_id: data.account.budget_id, 
+            name: "Misc",
+            amount: 0,
+            allocation: 0, },
+        ]);
+        console.log("Default budget created successfully");
+      } else {
+        console.error("Error creating default budget:", data.message);
+      }
+    } catch (error) {
+      console.error("Failed to create default budget:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (user !== null){
+      checkAndCreateMiscBudget(user);
+    }
+  }, [user]);
+
   useEffect(() => {
     async function fetchBudgets() {
       if (!user) return;
@@ -163,7 +221,7 @@ export default function Dashboard() {
 
   // BUDGET ALLOCATIONS
   const [allocation, setAllocation] = useState('');
-  const isAllocationValid = budgets.reduce((sum, b) => sum + b.allocation, 0) === 100;
+  const isAllocationValid = Array.isArray(budgets) ? budgets.reduce((sum, b) => sum + b.allocation, 0) === 100 : 0;
   useEffect(() => {
     // Always keep one extra for Disposable Income
     const expectedLength = budgets.length + 1;
@@ -679,11 +737,11 @@ const createBudget = async () => {
 
 
   const data = {
-    labels: budgets.map((budget) => budget.name),
+    labels: budgets.filter((budget) => budget.name !== 'Misc').map((budget) => budget.name),
     datasets: [
       {
         label: '',
-        data: budgets.map((budget) => budget.amount),
+        data: budgets.filter((budget) => budget.name !== 'Misc').map((budget) => budget.amount),
         backgroundColor: ['#E2B7F8', '#D1E8F9', '#D7A8F5', '#A0D8F1', '#7c8cfd'],
         hoverOffset: 4,
       },
@@ -796,7 +854,7 @@ const createBudget = async () => {
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
-              <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button>
+              {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
           </div>
         )}
 
