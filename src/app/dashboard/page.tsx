@@ -2,9 +2,11 @@
 // 5. work on redflags and quickglance 
 
 "use client"; // Mark this file as a Client Component
+import Link from 'next/link';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useRef} from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Import necessary components from Chart.js
 import { Chart as ChartJS, Title, Tooltip, ArcElement, CategoryScale, LinearScale, Chart } from 'chart.js';
@@ -39,7 +41,7 @@ type User = {
   last_name: string;
 };
 
-type ApiResponse = 
+type ApiResponse =
   | { authenticated: true; user: User }
   | { authenticated: false; message: string };
 
@@ -95,29 +97,29 @@ export default function Dashboard() {
           method: 'GET',
           credentials: 'include'
         });
-    
+
         const data: ApiResponse = await res.json();
         console.log('API /api/me response:', data);
-    
+
         if (res.ok && data.authenticated) {
           setUser(data.user);
-        } 
+        }
       } catch (error) {
         console.error('Error fetching user:', error);
-      } 
+      }
     }
-    
+
     fetchUser();
   }, []);
 
   // Ensure the component is rendered only on the client-side
   useEffect(() => {
     setIsClient(true);
-      }, []);
-  
+  }, []);
+
   // Quick Glance
-  const quickGlance : string[]= []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
-  const redFlags : string[]= []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
+  const quickGlance: string[] = []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
+  const redFlags: string[] = []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
   // function getQuickGlance(){
   //   if (budgets.length == 0){
   //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
@@ -126,17 +128,17 @@ export default function Dashboard() {
   //   }
   // }
   // getQuickGlance();
-  
+
   // START OF BUDGETS 
   type Budget = {
-    budget_id : number;
+    budget_id: number;
     name: string;
     amount: number;
     allocation: number;
   }
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
-  const checkAndCreateMiscBudget = async (user : User) => {
+  const checkAndCreateMiscBudget = async (user: User) => {
     try {
       const response = await fetch(`/api/budget?account_id=${user.account_id}`);
       const data = await response.json();
@@ -151,7 +153,7 @@ export default function Dashboard() {
     }
   };
 
-  const createMiscBudget = async (accountId : number) => {
+  const createMiscBudget = async (accountId: number) => {
     try {
       const response = await fetch("/api/budget", {
         method: "POST",
@@ -171,10 +173,12 @@ export default function Dashboard() {
       if (response.ok) {
         setBudgets((prevBudgets) => [
           ...prevBudgets,
-          { budget_id: data.account.budget_id, 
+          {
+            budget_id: data.account.budget_id,
             name: "Misc",
             amount: 0,
-            allocation: 0, },
+            allocation: 0,
+          },
         ]);
         console.log("Default budget created successfully");
       } else {
@@ -186,7 +190,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (user !== null){
+    if (user !== null) {
       checkAndCreateMiscBudget(user);
     }
   }, [user]);
@@ -194,12 +198,12 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchBudgets() {
       if (!user) return;
-  
+
       try {
         const res = await fetch(`/api/budget?account_id=${user.account_id}`, {
           method: 'GET',
         });
-  
+
         const data = await res.json();
         if (res.ok) {
           console.log('Budgets:', data.budgets);
@@ -211,7 +215,7 @@ export default function Dashboard() {
         console.error('Fetch error:', error);
       }
     }
-  
+
     fetchBudgets();
   }, [user]);
 
@@ -221,7 +225,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Always keep one extra for Disposable Income
     const expectedLength = budgets.length + 1;
-  
+
     if (incomeAlloc.length < expectedLength) {
       setIncomeAlloc([...incomeAlloc, ...Array(expectedLength - incomeAlloc.length).fill(0)]);
     } else if (incomeAlloc.length > expectedLength) {
@@ -243,105 +247,105 @@ export default function Dashboard() {
             amount: budget.amount
           }),
         });
-  
+
         const data = await response.json();
-  
+
         if (!response.ok) {
           console.error(`Failed to update ${budget.name}:`, data.message);
         }
       }
-  
+
       console.log('All budget allocations updated successfully.');
     } catch (error) {
       console.error('Error updating allocations:', error);
     }
   };
-  
+
   const [budgetName, setBudgetName] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
 
   // const addBudget = (e: React.FormEvent<HTMLFormElement>) => {
-    // e.preventDefault();
-    // if (!budgetName || !budgetAmount) return;
+  // e.preventDefault();
+  // if (!budgetName || !budgetAmount) return;
 
-    // const amountNumber = parseFloat(budgetAmount);
-    // if (isNaN(amountNumber)) return;
+  // const amountNumber = parseFloat(budgetAmount);
+  // if (isNaN(amountNumber)) return;
 
-    // setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
+  // setBudgets([...budgets, { name: budgetName, amount: amountNumber }]);
 
-    // setBudgetName('');
-    // setBudgetAmount('');
+  // setBudgetName('');
+  // setBudgetAmount('');
   // };
-  
-// Frontend deleteBudget function
-async function deleteBudget(id: number) {
-  try {
-    const response = await fetch(`/api/budget?budget_id=${id}`, {
-      method: 'DELETE',
-    });
 
-    const data = await response.json();
+  // Frontend deleteBudget function
+  async function deleteBudget(id: number) {
+    try {
+      const response = await fetch(`/api/budget?budget_id=${id}`, {
+        method: 'DELETE',
+      });
 
-    if (response.ok) {
-      console.log(data.message); // Log success message
-      // Update the state by filtering out the deleted budget
-      setBudgets((prev) => prev.filter((budget) => budget.budget_id !== id));
-    } else {
-      console.error(data.message); // Log error message from API
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log(data.message); // Log success message
+        // Update the state by filtering out the deleted budget
+        setBudgets((prev) => prev.filter((budget) => budget.budget_id !== id));
+      } else {
+        console.error(data.message); // Log error message from API
+      }
+    } catch (error) {
+      console.error('An error occurred while deleting the budget:', error);
     }
-  } catch (error) {
-    console.error('An error occurred while deleting the budget:', error);
   }
-}
 
-// add budget to database
-const createBudget = async () => {
-  const newAmount = parseInt(budgetAmount);
-  const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
-  const updatedTotal = currentTotal + newAmount;
-  if (updatedTotal > displayIncome) {
-    alert("Budget total exceeds available income!");
-    return; 
-  }
-  try {
-    const response = await fetch('/api/budget', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        account_id: user?.account_id,
-        name: budgetName,
-        amount: parseInt(budgetAmount),  
-        allocation: parseInt(allocation),  
-      }),
-    });
-
-    const data = await response.json();
-    console.log('Budget response:', data);
-
-    if (response.ok) {
-      setBudgets(prev => [
-        ...prev,
-        { 
-          budget_id: data.account.budget_id,  
-          name: budgetName, 
-          amount: parseFloat(budgetAmount),
-          allocation: parseFloat(allocation), 
-        }
-      ]);
-
-      setBudgetName('');
-      setBudgetAmount('');
-      setAllocation('');
-      setIncomeAlloc(prev => [...prev, 0]);
-    } else {
-      console.error(data.message);
+  // add budget to database
+  const createBudget = async () => {
+    const newAmount = parseInt(budgetAmount);
+    const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
+    const updatedTotal = currentTotal + newAmount;
+    if (updatedTotal > displayIncome) {
+      alert("Budget total exceeds available income!");
+      return;
     }
-  } catch (error) {
-    console.error('Failed to create budget:', error);
-  }
-};
+    try {
+      const response = await fetch('/api/budget', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: budgetName,
+          amount: parseInt(budgetAmount),
+          allocation: parseInt(allocation),
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Budget response:', data);
+
+      if (response.ok) {
+        setBudgets(prev => [
+          ...prev,
+          {
+            budget_id: data.account.budget_id,
+            name: budgetName,
+            amount: parseFloat(budgetAmount),
+            allocation: parseFloat(allocation),
+          }
+        ]);
+
+        setBudgetName('');
+        setBudgetAmount('');
+        setAllocation('');
+        setIncomeAlloc(prev => [...prev, 0]);
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create budget:', error);
+    }
+  };
 
 
   // console.log("testing budgets array: ", budgets);
@@ -382,9 +386,9 @@ const createBudget = async () => {
   const [sal, setSal] = useState(0);
   const [salFreq, setSalFreq] = useState('');
   type Income = {
-    name : string, 
-    amount : number,
-    occurrence : string,
+    name: string,
+    amount: number,
+    occurrence: string,
   }
 
   // Get income
@@ -400,13 +404,13 @@ const createBudget = async () => {
         const data = await res.json();
         if (res.ok) {
           let display = 0;
-          for (let i = 0; i < data.length; i++){
+          for (let i = 0; i < data.length; i++) {
             console.log("name: ", data[i].name);
-            if (data[i].name == "Salary"){
+            if (data[i].name == "Salary") {
               setSal(data[i].amount);
               setSalFreq(data[i].occurrence);
             }
-            if (data[i].name == "Income"){
+            if (data[i].name == "Income") {
               setInc(data[i].amount);
             }
             display += data[i].amount;
@@ -441,7 +445,7 @@ const createBudget = async () => {
       });
       const data = await response.json();
       console.log('Income response:', data);
-  
+
       if (response.ok) {
         setDisplayIncome(displayIncome + parseInt(newIncome));
         setInc(inc + parseInt(newIncome));
@@ -456,48 +460,48 @@ const createBudget = async () => {
 
   // update salary to database
   const updateSalary = async () => {
-  try {
-    const occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
+    try {
+      const occurrenceValue = salaryOccurrence;  // Default to salaryOccurrence
 
-    // If the occurrence is "custom", use the customSalaryOccurrence
-    // if (salaryOccurrence === "custom") {
-    //   occurrenceValue = customSalaryOccurrence;
-    // }
+      // If the occurrence is "custom", use the customSalaryOccurrence
+      // if (salaryOccurrence === "custom") {
+      //   occurrenceValue = customSalaryOccurrence;
+      // }
 
-    // Validate occurrenceValue to make sure it's one of the ENUM options
-    const validOccurrences = ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'];
-    if (!validOccurrences.includes(occurrenceValue)) {
-      console.error(`Invalid occurrence value: ${occurrenceValue}`);
-      return;
+      // Validate occurrenceValue to make sure it's one of the ENUM options
+      const validOccurrences = ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'];
+      if (!validOccurrences.includes(occurrenceValue)) {
+        console.error(`Invalid occurrence value: ${occurrenceValue}`);
+        return;
+      }
+
+      const response = await fetch('/api/income', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_id: user?.account_id,
+          name: "Salary",
+          amount: displayIncome + parseInt(salaryAmount),
+          occurrence: occurrenceValue,  // Use the validated occurrence
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Income response:', data);
+
+      if (response.ok) {
+        setDisplayIncome(displayIncome + parseInt(salaryAmount));
+        setSal(sal + parseInt(salaryAmount));
+        setSalFreq(occurrenceValue);
+        console.log("Salary updated!");
+      } else {
+        console.error(data.message);
+      }
+    } catch (error) {
+      console.error('Failed to create income:', error);
     }
-
-    const response = await fetch('/api/income', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        account_id: user?.account_id,
-        name: "Salary",
-        amount: displayIncome + parseInt(salaryAmount),
-        occurrence: occurrenceValue,  // Use the validated occurrence
-      }),
-    });
-
-    const data = await response.json();
-    console.log('Income response:', data);
-
-    if (response.ok) {
-      setDisplayIncome(displayIncome + parseInt(salaryAmount));
-      setSal(sal + parseInt(salaryAmount));
-      setSalFreq(occurrenceValue);
-      console.log("Salary updated!");
-    } else {
-      console.error(data.message);
-    }
-  } catch (error) {
-    console.error('Failed to create income:', error);
-  }
   };
 
   // Turn occurrence keyword into a RRule object
@@ -519,19 +523,19 @@ const createBudget = async () => {
     dtstart: datetime(2025, 1, 1), // hard coded for now 
     until: datetime(2030, 1, 1)
   })
-  
-  const dateReoccurrence : Date[] = salaryRule.all();
+
+  const dateReoccurrence: Date[] = salaryRule.all();
   const dateNow = new Date();
   for (const date of dateReoccurrence) {
-    if (date == dateNow){
+    if (date == dateNow) {
       for (let i = 0; i < budgets.length; i++) {
         const amt = budgets[i].amount;
         const alloc = budgets[i].allocation;
         const newbudg = [...budgets];
 
-        newbudg[i].allocation = amt + (sal * (alloc/100));
+        newbudg[i].allocation = amt + (sal * (alloc / 100));
         setBudgets(newbudg);
-      }      
+      }
     }
   }
 
@@ -551,7 +555,7 @@ const createBudget = async () => {
   //   { budget_id: 3, name: "Utilities", amount: 200, allocation: 25 },
   //   { budget_id: 4, name: "Savings", amount: 1000, allocation: 25 },
   // ];
-  
+
   // // Sample PaymentTest events
   // const paymentsTest : PaymentTest[] = [
   //   {
@@ -745,18 +749,18 @@ const createBudget = async () => {
       console.error('Failed to create payment:', error);
     }
   };
-  
+
   async function deletePayment(id: number) {
     try {
       const response = await fetch(`/api/events?event_id=${id}`, {
         method: 'DELETE',
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         console.log(data.message);
-        setPayments(prev => prev.filter(event => event.event_id !== id)); 
+        setPayments(prev => prev.filter(event => event.event_id !== id));
       } else {
         console.error(data.message);
       }
@@ -764,7 +768,7 @@ const createBudget = async () => {
       console.error('An error occurred while deleting the payment:', error);
     }
   }
-  
+
 
   function dashboardReturn(view: string) {
     if ((activeView == 'income' && view == "income") || (activeView == 'budget' && view == "budget") || (activeView == 'payment' && view == "payment")) {
@@ -798,7 +802,7 @@ const createBudget = async () => {
       maximumFractionDigits: 2,
     });
   }
-  
+
 
   // Fetch nearest payments
   const today = new Date();
@@ -858,6 +862,25 @@ const createBudget = async () => {
     }
   };
 
+  // logout
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+  
+      if (res.ok) {
+        router.push("/"); 
+      } else {
+        console.error("Failed to logout");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  }
+
 
   const data = {
     labels: budgets.filter((budget) => budget.name !== 'Misc').map((budget) => budget.name),
@@ -895,8 +918,12 @@ const createBudget = async () => {
   return (
     <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
       {/* Left Column */}
-      <div className="w-[45%]">
-      <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">Welcome, {user?.first_name}</h2>
+      <div className="w-[45%] relative">
+        <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">
+          Welcome, {user?.first_name}
+        </h2>
+
+        
         <div className="flex justify-center pt-3 pb-3">
           <div className="object-contain w-[50%]">
             <Doughnut ref={chartRef} data={data} options={options} />
@@ -913,7 +940,7 @@ const createBudget = async () => {
                 onClick={() => dashboardReturn("income")}>Income</button>
               <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
                 onClick={() => dashboardReturn("budget")}>Budget</button>
-              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer" 
+              <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
                 onClick={() => dashboardReturn("payment")}>Payment</button>
             </div>
           </div>
@@ -941,7 +968,7 @@ const createBudget = async () => {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => {e.preventDefault(); updateSalary();}}>
+              <form onSubmit={(e) => { e.preventDefault(); updateSalary(); }}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
@@ -953,11 +980,11 @@ const createBudget = async () => {
                   onChange={(e) => setSalaryOccurrence(e.target.value)}
                 >
                   <option value="" disabled hidden>Select Occurrence</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
                 </select>
 
                 {/* {salaryOccurrence === 'custom' && (
@@ -971,15 +998,15 @@ const createBudget = async () => {
                   />
                 )} */}
               </form>
-              <form onSubmit={(e) => {e.preventDefault(); addIncome();}}>
+              <form onSubmit={(e) => { e.preventDefault(); addIncome(); }}>
                 <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
               </form>
               {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
-          </div>
-        )}
+            </div>
+          )}
 
           {/* Allocation Section */}
           {/* {activeView === 'allocation' && (
@@ -1033,24 +1060,23 @@ const createBudget = async () => {
                   const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
                   if (totalAllocation !== 100) {
                     alert("Total allocation must equal 100%");
-                    return; 
+                    return;
                   }
                   createBudget();
                 }}
                 className="flex flex-wrap justify-center items-center"
               >
                 <div className="text-center mb-4">
-                <input
-                type="submit"
-                title="The percentage will be the percentage that is allocated to each budget from the total salary."
-                className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${
-                  budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                value="Add Budget"  
-                disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
-                />
+                  <input
+                    type="submit"
+                    title="The percentage will be the percentage that is allocated to each budget from the total salary."
+                    className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
+                      ? 'opacity-50 cursor-not-allowed'
+                      : ''
+                      }`}
+                    value="Add Budget"
+                    disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
+                  />
                   <input
                     type="text"
                     className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
@@ -1075,82 +1101,81 @@ const createBudget = async () => {
                 </div>
               </form>
               <div>
-              {budgets.map((budget, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
-                >
-                  <div className="flex items-center">
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={isNaN(budget.amount) ? '' : budget.amount}
-                    onChange={(e) => {
-                      const newBudgets = [...budgets];
-                      newBudgets[index].amount = parseFloat(e.target.value);
-                      setBudgets(newBudgets);
-                    }}
-                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
-                  />
-
-                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
-                  </div>
-
-                  {/* Input for updating budget allocation */}
-                  <div className="flex justify-end flex-grow">
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      max="100"
-                      value={isNaN(budget.allocation) ? '' : budget.allocation}
-                      onChange={(e) => {
-                        const newAlloc = [...budgets];
-                        newAlloc[index].allocation = parseFloat(e.target.value);
-                        setBudgets(newAlloc);
-                      }}
-                      className="w-24 bg-blue-100 text-blue-400 p-2 rounded-lg"
-                    />
-                  </div>
-
-                  {/* Delete budget */}
-                  <button
-                    onClick={() => deleteBudget(budget.budget_id)}
-                    title="This button deletes the budget entry"
-                    className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
+                {budgets.map((budget, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
                   >
-                    ✕
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={isNaN(budget.amount) ? '' : budget.amount}
+                        onChange={(e) => {
+                          const newBudgets = [...budgets];
+                          newBudgets[index].amount = parseFloat(e.target.value);
+                          setBudgets(newBudgets);
+                        }}
+                        className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                      />
+
+                      <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
+                    </div>
+
+                    {/* Input for updating budget allocation */}
+                    <div className="flex justify-end flex-grow">
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        max="100"
+                        value={isNaN(budget.allocation) ? '' : budget.allocation}
+                        onChange={(e) => {
+                          const newAlloc = [...budgets];
+                          newAlloc[index].allocation = parseFloat(e.target.value);
+                          setBudgets(newAlloc);
+                        }}
+                        className="w-24 bg-blue-100 text-blue-400 p-2 rounded-lg"
+                      />
+                    </div>
+
+                    {/* Delete budget */}
+                    <button
+                      onClick={() => deleteBudget(budget.budget_id)}
+                      title="This button deletes the budget entry"
+                      className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {/* Update Allocations Button */}
+                {!isAllocationValid && (
+                  <p className="text-red-500 text-sm text-center">
+                    Total allocation must equal 100%.
+                  </p>
+                )}
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={updateBudget}
+                    disabled={!isAllocationValid}
+                    className={`px-4 py-2 rounded-lg ${isAllocationValid
+                      ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                  >
+                    Update Budgets
                   </button>
                 </div>
-              ))}
-              {/* Update Allocations Button */}
-              {!isAllocationValid && (
-              <p className="text-red-500 text-sm text-center">
-                Total allocation must equal 100%.
-              </p>
-            )}
-
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={updateBudget}
-                disabled={!isAllocationValid}
-                className={`px-4 py-2 rounded-lg ${
-                  isAllocationValid
-                    ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                Update Budgets
-              </button>
-            </div>
-            </div>
+              </div>
             </div>
           )}
 
 
-           {/* Payment Section */}
-           {activeView === 'payment' && (
+          {/* Payment Section */}
+          {activeView === 'payment' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
               <form onSubmit={(e) => { e.preventDefault(); createPayment(); }}>
                 <div className="text-center mb-4">
@@ -1160,10 +1185,10 @@ const createBudget = async () => {
                       <select
                         id="budgetDropdown"
                         className="w-full bg-white p-2 border rounded-lg text-blue-400 text-center"
-                        value={paymentBudgetID !== undefined ? budgets[paymentBudgetID]?.name : ''} 
+                        value={paymentBudgetID !== undefined ? budgets[paymentBudgetID]?.name : ''}
                         onChange={(e) => {
-                          const selectedIndex = e.target.selectedIndex - 1; 
-                          setPaymentBudgetID(selectedIndex >= 0 ? selectedIndex : undefined);  
+                          const selectedIndex = e.target.selectedIndex - 1;
+                          setPaymentBudgetID(selectedIndex >= 0 ? selectedIndex : undefined);
                         }}
                       >
                         <option value="" disabled hidden>Select Budget</option>
@@ -1289,6 +1314,16 @@ const createBudget = async () => {
 
       {/* Right Column (Rounded Box) */}
       <div className="w-[55%]">
+        <div className="flex justify-end mb-4">
+          <Link href="/">
+            <button 
+              className="bg-white text-[#7C8BFF] px-4 py-2 rounded-lg hover:bg-[#C9CFFF] underline cursor-pointer"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </Link>
+        </div>
         <div className="bg-white p-6 rounded-4xl shadow-lg flex flex-col justify-center items-center">
           <Calendar className="mb-5"
 
