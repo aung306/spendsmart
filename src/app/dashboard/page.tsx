@@ -1,8 +1,6 @@
 // src/app/dashboard/page.tsx
 
 // 5. work on redflags and quickglance 
-// 6. work on making budget amounts editable
-// 7. make tooltips for information
 
 "use client"; // Mark this file as a Client Component
 
@@ -903,7 +901,6 @@ const createBudget = async () => {
           {/* Budget Section */}
           {activeView === 'budget' && (
             <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <p className='text-center text-black'>The percentage will be the percentage that is allocated to each budget from the total salary.</p>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -919,12 +916,13 @@ const createBudget = async () => {
                 <div className="text-center mb-4">
                 <input
                 type="submit"
+                title="The percentage will be the percentage that is allocated to each budget from the total salary."
                 className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${
                   budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
                 }`}
-                value="Add Budget"
+                value="Add Budget"  
                 disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
                 />
                   <input
@@ -993,6 +991,7 @@ const createBudget = async () => {
                   {/* Delete budget */}
                   <button
                     onClick={() => deleteBudget(budget.budget_id)}
+                    title="This button deletes the budget entry"
                     className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
                   >
                     ✕
@@ -1012,7 +1011,7 @@ const createBudget = async () => {
                 disabled={!isAllocationValid}
                 className={`px-4 py-2 rounded-lg ${
                   isAllocationValid
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
