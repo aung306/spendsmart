@@ -1,5 +1,4 @@
 // src/app/dashboard/page.tsx
-
 // 5. work on redflags and quickglance 
 
 "use client"; // Mark this file as a Client Component
