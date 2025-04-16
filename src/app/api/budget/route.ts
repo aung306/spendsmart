@@ -13,28 +13,27 @@ export async function GET(req: Request) {
     if (!accID) {
       return NextResponse.json(
         { message: 'account_id is required' },
-        { status: 400 } // Bad Request
+        { status: 400 } 
       );
     }
 
-    // get info from budget table using account_id
     const result = await query(
-      'SELECT name, amount, allocation FROM budget WHERE account_id = ?',
+      'SELECT budget_id, name, amount, allocation FROM budget WHERE account_id = ?',
       [accID]
-    ) as Array<{ name: string; amount: number, allocation: number }>;
+    ) as Array<{ budget_id: number; name: string; amount: number, allocation: number }>;
 
-    if (result.length === 0) {
-      return NextResponse.json(
-        { message: `No budget found for account_id ${accID}` },
-        { status: 404 } // Not Found
-      );
-    }
+    // if (result.length === 0) {
+    //   return NextResponse.json(
+    //     { message: `No budget found for account_id ${accID}` },
+    //     { status: 404 } 
+    //   );
+    // }
 
     // Returns all budgets as an array
     return NextResponse.json({
       account_id: accID,
-      budgets: result, // this returns all budgets as an array
-      count: result.length
+      budgets: result, 
+      count: result.length,
     });
   } 
   catch (error) {
@@ -53,6 +52,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { account_id, name, amount, allocation } = await req.json();
+    console.log("payload: ", account_id, name, amount, allocation);
 
     if (!account_id || !name || amount === undefined || allocation === undefined) {
       return NextResponse.json(

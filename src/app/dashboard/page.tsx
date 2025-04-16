@@ -3,8 +3,8 @@
 // 1. disposable income to work - create a default disposable income as a budget for each user and have it not show up in the circle
 // 2. create a feature where users can move the disposable income to their budgets 
 // 4. work on income allocations 
-// 5. work on redflags and quickglance 
 // 6. figure out how to do reoccurring salary only and not income
+// 5. work on redflags and quickglance 
 
 "use client"; // Mark this file as a Client Component
 
@@ -162,7 +162,10 @@ export default function Dashboard() {
     budget_id : number;
     name: string;
     amount: number;
+    allocation: number;
   }
+
+  const [allocation, setAllocation] = useState('');
 
   useEffect(() => {
     // Always keep one extra for Disposable Income
@@ -210,35 +213,47 @@ export default function Dashboard() {
     }
   }
 
-  // add budget to database
-  const createBudget = async () => {
-    try {
-      const response = await fetch('/api/budget', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          account_id: user?.account_id,
-          name: budgetName,
+// add budget to database
+const createBudget = async () => {
+  try {
+    const response = await fetch('/api/budget', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account_id: user?.account_id,
+        name: budgetName,
+        amount: parseInt(budgetAmount),  
+        allocation: parseInt(allocation),  
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Budget response:', data);
+
+    if (response.ok) {
+      setBudgets(prev => [
+        ...prev,
+        { 
+          budget_id: data.budget_id,  
+          name: budgetName, 
           amount: parseFloat(budgetAmount),
-        }),
-      });
-  
-      const data = await response.json();
-      console.log('Budget response:', data);
-  
-      if (response.ok) {
-        setBudgets(prev => [...prev, { budget_id: data.account.budget_id,name: budgetName, amount: parseFloat(budgetAmount) }]);
-        setBudgetName('');
-        setBudgetAmount('');
-      } else {
-        console.error(data.message);
-      }
-    } catch (error) {
-      console.error('Failed to create budget:', error);
+          allocation: parseFloat(allocation), 
+        }
+      ]);
+
+      setBudgetName('');
+      setBudgetAmount('');
+      setIncomeAlloc(prev => [...prev, 0]);
+    } else {
+      console.error(data.message);
     }
-  };
+  } catch (error) {
+    console.error('Failed to create budget:', error);
+  }
+};
+
 
   // console.log("testing budgets array: ", budgets);
 
@@ -396,10 +411,10 @@ export default function Dashboard() {
     endDate: Date;
   }
   const budgetsTest = [
-    { budget_id: 1, name: "Groceries", amount: 500 },
-    { budget_id: 2, name: "Entertainment", amount: 300 },
-    { budget_id: 3, name: "Utilities", amount: 200 },
-    { budget_id: 4, name: "Savings", amount: 1000 },
+    { budget_id: 1, name: "Groceries", amount: 500, allocation: 25 },
+    { budget_id: 2, name: "Entertainment", amount: 300, allocation: 25 },
+    { budget_id: 3, name: "Utilities", amount: 200, allocation: 25 },
+    { budget_id: 4, name: "Savings", amount: 1000, allocation: 25 },
   ];
   
   // Sample PaymentTest events
@@ -764,6 +779,8 @@ export default function Dashboard() {
                     placeholder="Name" value={budgetName} onChange={(e) => setBudgetName(e.target.value)} />
                   <input type="text" className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
                     placeholder="$0" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} />
+                  <input type="text" className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                  placeholder="100%" value={allocation} onChange={(e) => setAllocation(e.target.value)} />
                 </div>
               </form>
               <div>
