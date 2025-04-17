@@ -160,7 +160,7 @@ export default function Dashboard() {
           account_id: accountId,
           name: "Misc",
           amount: 0,
-          allocation: 0,
+          allocation: 100,
         }),
       });
 
