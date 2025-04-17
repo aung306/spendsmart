@@ -193,7 +193,7 @@ export default function Dashboard() {
     if (user !== null) {
       checkAndCreateMiscBudget(user);
     }
-  }, [user, checkAndCreateMiscBudget]);
+  }, [user]);
 
   useEffect(() => {
     async function fetchBudgets() {
@@ -231,7 +231,7 @@ export default function Dashboard() {
     } else if (incomeAlloc.length > expectedLength) {
       setIncomeAlloc(incomeAlloc.slice(0, expectedLength));
     }
-  }, [budgets, incomeAlloc]);
+  }, [budgets]);
 
   const updateBudget = async () => {
     try {
@@ -693,7 +693,7 @@ export default function Dashboard() {
         try {
           data = await response.json();
         } catch (err) {
-          console.error("Server returned non-JSON response: ", err);
+          console.error("Server returned non-JSON response");
           return;
         }
 
