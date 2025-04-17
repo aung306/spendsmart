@@ -104,6 +104,11 @@ export default function Dashboard() {
         if (res.ok && data.authenticated) {
           setUser(data.user);
         }
+        else {
+          setUser(null);
+          alert("Your session has expired. Please log in again.");
+          window.location.href = "/login";
+        }
       } catch (error) {
         console.error('Error fetching user:', error);
       }
@@ -120,14 +125,6 @@ export default function Dashboard() {
   // Quick Glance
   const quickGlance: string[] = []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags: string[] = []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
-  // function getQuickGlance(){
-  //   if (budgets.length == 0){
-  //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
-  //   }
-  //   else{
-  //   }
-  // }
-  // getQuickGlance();
 
   // START OF BUDGETS 
   type Budget = {
@@ -300,13 +297,13 @@ export default function Dashboard() {
 
   // add budget to database
   const createBudget = async () => {
-    const newAmount = parseInt(budgetAmount);
-    const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
-    const updatedTotal = currentTotal + newAmount;
-    if (updatedTotal > displayIncome) {
-      alert("Budget total exceeds available income!");
-      return;
-    }
+    // const newAmount = parseInt(budgetAmount);
+    // const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
+    // const updatedTotal = currentTotal + newAmount;
+    // if (updatedTotal > displayIncome) {
+    //   alert("Budget total exceeds available income!");
+    //   return;
+    // }
     try {
       const response = await fetch('/api/budget', {
         method: 'POST',
@@ -909,6 +906,27 @@ export default function Dashboard() {
     cutout: '70%',
   };
 
+  // START OF QUICK GLANCE AND RED FLAGS
+  // function getQuickGlance(){
+  //   if (budgets.length == 0){
+  //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
+  //   }
+  //   else{
+  //   }
+  // }
+  // getQuickGlance();
+
+  function getRedFlags(){
+    console.log(payments);
+    for(const b of budgets){
+      if(b.amount == 0){
+        redFlags.push("Budget \"", b.name, "\" is out of money!");
+      }
+    }
+
+  }
+  getRedFlags();
+
 
   if (!isClient) {
     return null; // Don't render anything on the server side
@@ -967,8 +985,14 @@ export default function Dashboard() {
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
-              <form onSubmit={(e) => { e.preventDefault(); updateSalary(); }}>
-                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
+              <form onSubmit={(e) => { e.preventDefault(); 
+                if (!salaryAmount.trim() || !/^-?\d+$/.test(salaryAmount.trim())) {
+                  alert("Please enter a valid integer salary.");
+                  return;
+                }
+                updateSalary(); 
+                }}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" title="This will add to the total salary, which will be dispersed every frequency that you choose amongst budgets"
                   value="Update Salary" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$70,000" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} />
@@ -997,8 +1021,13 @@ export default function Dashboard() {
                   />
                 )} */}
               </form>
-              <form onSubmit={(e) => { e.preventDefault(); addIncome(); }}>
-                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
+              <form onSubmit={(e) => { e.preventDefault(); 
+                if (!newIncome.trim() || !/^-?\d+$/.test(newIncome.trim())) {
+                  alert("Please enter a valid integer income.");
+                  return;
+                }
+                addIncome(); }}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" title="This is a one time addition to your total balance."
                   value="Add Income" />
                 <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
                   placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
@@ -1056,6 +1085,14 @@ export default function Dashboard() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (
+                    !budgetName.trim() ||
+                    !budgetAmount.trim() ||
+                    !allocation.trim()
+                  ) {
+                    alert("Please fill out all fields before submitting.");
+                    return;
+                  }
                   const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
                   if (totalAllocation !== 100) {
                     alert("Total allocation must equal 100%");
@@ -1069,12 +1106,8 @@ export default function Dashboard() {
                   <input
                     type="submit"
                     title="The percentage will be the percentage that is allocated to each budget from the total salary."
-                    className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
-                      ? 'opacity-50 cursor-not-allowed'
-                      : ''
-                      }`}
+                    className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer`}
                     value="Add Budget"
-                    disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
                   />
                   <input
                     type="text"
@@ -1106,6 +1139,8 @@ export default function Dashboard() {
                     className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
                   >
                     <div className="flex items-center">
+                    <div className="relative w-24">
+                      <span className="absolute inset-y-0 left-2 flex items-center text-blue-400">$</span>
                       <input
                         type="number"
                         step="1"
@@ -1116,14 +1151,15 @@ export default function Dashboard() {
                           newBudgets[index].amount = parseFloat(e.target.value);
                           setBudgets(newBudgets);
                         }}
-                        className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                        className="pl-5 w-full bg-blue-100 text-blue-400 p-2 rounded-lg"
                       />
-
-                      <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
+                    </div>
+                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg text-center">{budget.name}</p>
                     </div>
 
                     {/* Input for updating budget allocation */}
                     <div className="flex justify-end flex-grow">
+                    <div className="relative w-24">
                       <input
                         type="number"
                         step="1"
@@ -1135,9 +1171,13 @@ export default function Dashboard() {
                           newAlloc[index].allocation = parseFloat(e.target.value);
                           setBudgets(newAlloc);
                         }}
-                        className="w-24 bg-blue-100 text-blue-400 p-2 rounded-lg"
+                        className="pr-5 w-full bg-blue-100 text-blue-400 p-2 rounded-lg"
                       />
+                      <span className="absolute inset-y-0 right-2 flex items-center text-blue-400">
+                        %
+                      </span>
                     </div>
+                  </div>
 
                     {/* Delete budget */}
                     <button
