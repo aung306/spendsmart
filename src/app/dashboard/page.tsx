@@ -594,38 +594,7 @@ export default function Dashboard() {
     nextYear.setFullYear(nextYear.getFullYear() + 1);
     return new Date(nextYear.setHours(0, 0, 0, 0)).toISOString().split('T')[0];
   });
-
-
   
-  for (const date of dateReoccurrence) {
-    if (date == dateNow) {
-      const newbudg = [...budgets];
-      for (const payment of payments) {
-        const paymentRule = new RRule({
-          freq: getRRuleFreq(payment.occurrence) ?? RRule.MONTHLY,
-          interval: 1,
-          dtstart: new Date(payment.start_date),
-          until: new Date(payment.end_date),
-        });
-        
-        const occursToday = paymentRule.all().some(pDate => {
-          const paymentDateStr = pDate.toISOString().split('T')[0];
-          return paymentDateStr === dateNow.toISOString().split('T')[0];
-        });
-    
-        if (occursToday) {
-          const index = newbudg.findIndex(b => b.budget_id === payment.budget_id);
-          if (index !== -1) {
-            newbudg[index].amount -= payment.payment;
-          }
-        }
-      }
-    
-      setBudgets(newbudg);
-    }
-  }
-
-
     useEffect(() => {
       async function fetchPayments() {
         if (!user) return;
@@ -754,7 +723,6 @@ export default function Dashboard() {
               end_date: endDate2,
             },
           ]);
-
 
           setPaymentName('');
           setPaymentAmount('');
