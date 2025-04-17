@@ -1007,6 +1007,16 @@ export default function Dashboard() {
                     <option value="yearly">Yearly</option>
                   </select>
 
+                  {/* {salaryOccurrence === 'custom' && (
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-1/10 bg-white p-2 m-2 text-black"
+                    placeholder="1"
+                    value={customSalaryOccurrence}
+                    onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
+                  />
+                )} */}
                 </form>
                 <form onSubmit={(e) => { e.preventDefault(); addIncome(); }}>
                   <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
@@ -1017,6 +1027,49 @@ export default function Dashboard() {
                 {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
               </div>
             )}
+
+            {/* Allocation Section */}
+            {/* {activeView === 'allocation' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              {incomeAlloc.map((alloc, index) => (
+                <div key={index} className="flex items-center bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={(alloc * 100).toFixed(0)}
+                    onChange={(e) => {
+                      const newAlloc = [...incomeAlloc];
+                      newAlloc[index] = parseFloat(e.target.value) / 100 || 0;
+                      setIncomeAlloc(newAlloc);
+                    }}
+                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                  />
+                  <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">
+                    {index === 0 ? 'Disposable Income' : budgets[index - 1]?.name || ''}
+                  </p>
+                </div>
+              ))}
+
+              <p className={`mt-2 text-sm font-medium ${allocCheck ? 'text-green-600' : 'text-red-500'}`}>
+                Total: {(totalAlloc * 100).toFixed(2)}% {!allocCheck && '(must equal 100%)'}
+              </p>
+
+              <button
+                disabled={!allocCheck}
+                onClick={() => setActiveView('income')}
+                className={`mt-4 px-4 py-2 rounded ${
+                  allocCheck
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Save Allocation
+              </button>
+            </div>
+          )} */}
+
 
             {/* Budget Section */}
             {activeView === 'budget' && (
