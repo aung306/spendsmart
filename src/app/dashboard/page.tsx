@@ -99,9 +99,9 @@ export default function Dashboard() {
         });
 
         const data: ApiResponse = await res.json();
-        console.log('API /api/me response:', data);
-
+        
         if (res.ok && data.authenticated) {
+          console.log('User authenticated');
           setUser(data.user);
         }
         else {
@@ -203,7 +203,7 @@ export default function Dashboard() {
 
         const data = await res.json();
         if (res.ok) {
-          console.log('Budgets:', data.budgets);
+          console.log("Budgets fetched successfully");
           setBudgets(data.budgets);
         } else {
           console.error('Failed to fetch budgets:', data.message);
@@ -284,7 +284,7 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log(data.message); // Log success message
+        console.log("budget deleted"); // Log success message
         // Update the state by filtering out the deleted budget
         setBudgets((prev) => prev.filter((budget) => budget.budget_id !== id));
       } else {
@@ -319,7 +319,6 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      console.log('Budget response:', data);
 
       if (response.ok) {
         setBudgets(prev => [
@@ -402,7 +401,6 @@ export default function Dashboard() {
         if (res.ok) {
           let display = 0;
           for (let i = 0; i < data.length; i++) {
-            console.log("name: ", data[i].name);
             if (data[i].name == "Salary") {
               setSal(data[i].amount);
               setSalFreq(data[i].occurrence);
@@ -441,7 +439,6 @@ export default function Dashboard() {
         }),
       });
       const data = await response.json();
-      console.log('Income response:', data);
 
       if (response.ok) {
         setDisplayIncome(displayIncome + parseInt(newIncome));
@@ -486,7 +483,6 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      console.log('Income response:', data);
 
       if (response.ok) {
         setDisplayIncome(displayIncome + parseInt(salaryAmount));
@@ -648,7 +644,7 @@ export default function Dashboard() {
             end_date: new Date(event.end_date),
           }));
 
-          console.log('Parsed payments:', paymentsWithDates);
+          console.log("Payments fetched");
           setPayments(paymentsWithDates);
         } else {
           console.error('Failed to fetch payments:', data.message);
@@ -695,7 +691,7 @@ export default function Dashboard() {
       end_date: endDate.toISOString().split('T')[0],
     };
 
-    console.log('Sending payload to /api/events:', payload);
+    console.log('Sending payload to /api/events');
 
     try {
       const response = await fetch('/api/events', {
@@ -707,7 +703,6 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      console.log('Response from server:', data);
 
       if (response.ok) {
         console.log('Payment creation successful. Updating local state...');
@@ -727,9 +722,6 @@ export default function Dashboard() {
 
           },
         ]);
-
-
-        console.log(payments);
 
         // Clear form fields
         setPaymentName('');
@@ -755,7 +747,7 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log(data.message);
+        console.log("Payment deleted");
         setPayments(prev => prev.filter(event => event.event_id !== id));
       } else {
         console.error(data.message);
@@ -908,7 +900,6 @@ export default function Dashboard() {
 
   // START OF QUICK GLANCE AND RED FLAGS
   function getQuickGlance(){
-    console.log("nearest payment: ", nearestPayments)
     if (budgets.length == 1){
       quickGlance.push("You have no custom budgets. Please add budgets in the dashboard!");
     }
@@ -930,7 +921,6 @@ export default function Dashboard() {
   getQuickGlance();
 
   function getRedFlags(){
-    console.log(payments);
     for(const b of budgets){
       if(b.amount == 0){
         redFlags.push(`Budget "${b.name}" is out of money!`);
