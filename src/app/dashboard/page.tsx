@@ -910,7 +910,7 @@ export default function Dashboard() {
       quickGlance.push(`Your next payment is ${(nearestPayments[0].date).toDateString()} of $${nearestPayments[0].payment.payment} for ${nearestPayments[0].payment.event_name}.`);
     }
     if (budgets.length > 1){
-      let highestBudget = budgets.reduce((max, current) => {
+      const highestBudget = budgets.reduce((max, current) => {
         return current.amount > max.amount ? current : max;
       }, budgets[0]);
       if (highestBudget.amount > 25){
