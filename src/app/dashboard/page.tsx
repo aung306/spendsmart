@@ -907,20 +907,36 @@ export default function Dashboard() {
   };
 
   // START OF QUICK GLANCE AND RED FLAGS
-  // function getQuickGlance(){
-  //   if (budgets.length == 0){
-  //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
-  //   }
-  //   else{
-  //   }
-  // }
-  // getQuickGlance();
+  function getQuickGlance(){
+    console.log("nearest payment: ", nearestPayments)
+    if (budgets.length == 1){
+      quickGlance.push("You have no custom budgets. Please add budgets in the dashboard!");
+    }
+    if(displayIncome == 0){
+      quickGlance.push("You have no income. Add income in the income tab!")
+    }
+    if (nearestPayments.length != 0){
+      quickGlance.push(`Your next payment is ${(nearestPayments[0].date).toDateString()} of $${nearestPayments[0].payment.payment} for ${nearestPayments[0].payment.event_name}.`);
+    }
+    if (budgets.length > 1){
+      let highestBudget = budgets.reduce((max, current) => {
+        return current.amount > max.amount ? current : max;
+      }, budgets[0]);
+      if (highestBudget.amount > 25){
+        quickGlance.push(`You still have $${highestBudget.amount} in ${highestBudget.name}!`);
+      }
+    }
+  }
+  getQuickGlance();
 
   function getRedFlags(){
     console.log(payments);
     for(const b of budgets){
       if(b.amount == 0){
-        redFlags.push("Budget \"", b.name, "\" is out of money!");
+        redFlags.push(`Budget "${b.name}" is out of money!`);
+      }
+      if(b.amount < 25 && b.amount > 0){
+        redFlags.push(`Budget "${b.name}" is starting to run low!`);
       }
     }
 
@@ -961,27 +977,33 @@ export default function Dashboard() {
                 onClick={() => dashboardReturn("payment")}>Payment</button>
             </div>
           </div>
-          {/* Quick Glance and Red Flags Section */}
+
           {activeView === 'dashboard' && (
             <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
               <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
-              <div> {quickGlance.map((msg, index) => (
-                <p key={index} className="text-gray-600 text-sm flex justify-center">{msg}</p>
-              ))}
+              <div>
+                {quickGlance.map((msg, index) => (
+                  <p
+                    key={index}
+                    className="text-gray-600 text-sm flex justify-center pt-2 pb-2" // Adds padding top and bottom
+                  >
+                    {msg}
+                  </p>
+                ))}
               </div>
             </div>
           )}
+
 
           {activeView === 'dashboard' && (
             <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
               <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
-              <div className="shadow-lg rounded-lg flex">
-                {/* <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p> */}
-                <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>
+              <div> {redFlags.map((msg, index) => (
+                <p key={index} className="text-gray-600 text-sm flex justify-center pt-2 pb-2">{msg}</p>
+              ))}
               </div>
             </div>
           )}
-
           {/* Income Section */}
           {activeView === 'income' && (
             <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
