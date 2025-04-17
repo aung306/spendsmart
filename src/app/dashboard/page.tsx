@@ -1088,7 +1088,7 @@ export default function Dashboard() {
                   <div className="text-center mb-4">
                     <input
                       type="submit"
-                      title="The percentage will be the percentage that is allocated to each budget from the total salary."
+                      title="The $ amount is the amount initially added to the budget. The percentage will be the percentage that is allocated to each budget from the total salary."
                       className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer`}
                       value="Add Budget"
                     />
