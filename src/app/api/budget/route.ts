@@ -52,7 +52,6 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { account_id, name, amount, allocation } = await req.json();
-    console.log("payload: ", account_id, name, amount, allocation);
 
     if (!account_id || !name || amount === undefined || allocation === undefined) {
       return NextResponse.json(
