@@ -921,7 +921,7 @@ export default function Dashboard() {
     }
 
     return (
-      <div className="font-[family-name:var(--font-coustard)] bg-violet-200 flex space-x-8 p-8">
+      <div className="font-[family-name:var(--font-coustard)] flex space-x-8 p-8">
         {/* Left Column */}
         <div className="w-[45%] relative">
           <h2 className="text-4xl text-center font-semibold font-[family-name:var(--font-coustard)] m-3">
@@ -938,7 +938,7 @@ export default function Dashboard() {
           <div className="bg-white p-4 shadow-lg rounded-xl">
             <div className="justify-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
               <div className="flex justify-center">
-                <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
+                <button className="text-[#7C8BFF]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
               </div>
               <div className="shadow-lg rounded-lg flex">
                 <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
@@ -952,7 +952,7 @@ export default function Dashboard() {
             {/* Quick Glance and Red Flags Section */}
             {activeView === 'dashboard' && (
               <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-                <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
+                <p className="text-[#7C8BFF] flex justify-center">Quick Glance</p>
                 <div>
                 {quickGlance.map((msg, index) => (
                   <p
@@ -968,7 +968,7 @@ export default function Dashboard() {
 
             {activeView === 'dashboard' && (
               <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-                <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
+                <p className="text-[#7C8BFF] flex justify-center">Red Flags</p>
                 <div> {redFlags.map((msg, index) => (
                   <p key={index} className="text-gray-600 text-sm flex justify-center pt-2 pb-2">{msg}</p>
                 ))}
