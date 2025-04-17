@@ -99,10 +99,15 @@ export default function Dashboard() {
         });
 
         const data: ApiResponse = await res.json();
-        console.log('API /api/me response:', data);
-
+        
         if (res.ok && data.authenticated) {
+          console.log('User authenticated');
           setUser(data.user);
+        }
+        else {
+          setUser(null);
+          alert("Your session has expired. Please log in again.");
+          window.location.href = "/login";
         }
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -120,14 +125,6 @@ export default function Dashboard() {
   // Quick Glance
   const quickGlance: string[] = []; // "You spent less than 50% of your Groceries budget this month! Update your income allocation in the 'Income' tab.";
   const redFlags: string[] = []; // "Subscriptions Budget has an upcoming payment that will put the budget under $1";
-  // function getQuickGlance(){
-  //   if (budgets.length == 0){
-  //     quickGlance.push("You have no budgets. Please add budgets in the dashboard!");
-  //   }
-  //   else{
-  //   }
-  // }
-  // getQuickGlance();
 
   // START OF BUDGETS 
   type Budget = {
@@ -206,7 +203,7 @@ export default function Dashboard() {
 
         const data = await res.json();
         if (res.ok) {
-          console.log('Budgets:', data.budgets);
+          console.log("Budgets fetched successfully");
           setBudgets(data.budgets);
         } else {
           console.error('Failed to fetch budgets:', data.message);
@@ -314,7 +311,7 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log(data.message); // Log success message
+        console.log("budget deleted"); // Log success message
         // Update the state by filtering out the deleted budget
         setBudgets((prev) => prev.filter((budget) => budget.budget_id !== id));
       } else {
@@ -327,13 +324,13 @@ export default function Dashboard() {
 
   // add budget to database
   const createBudget = async () => {
-    const newAmount = parseInt(budgetAmount);
-    const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
-    const updatedTotal = currentTotal + newAmount;
-    if (updatedTotal > displayIncome) {
-      alert("Budget total exceeds available income!");
-      return;
-    }
+    // const newAmount = parseInt(budgetAmount);
+    // const currentTotal = budgets.reduce((sum, b) => sum + b.amount, 0);
+    // const updatedTotal = currentTotal + newAmount;
+    // if (updatedTotal > displayIncome) {
+    //   alert("Budget total exceeds available income!");
+    //   return;
+    // }
     try {
       const response = await fetch('/api/budget', {
         method: 'POST',
@@ -349,7 +346,6 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      console.log('Budget response:', data);
 
       if (response.ok) {
         setBudgets(prev => [
@@ -432,7 +428,6 @@ export default function Dashboard() {
         if (res.ok) {
           let display = 0;
           for (let i = 0; i < data.length; i++) {
-            console.log("name: ", data[i].name);
             if (data[i].name == "Salary") {
               setSal(data[i].amount);
               setSalFreq(data[i].occurrence);
@@ -471,7 +466,6 @@ export default function Dashboard() {
         }),
       });
       const data = await response.json();
-      console.log('Income response:', data);
 
       if (response.ok) {
         setDisplayIncome(displayIncome + parseInt(newIncome));
@@ -516,7 +510,6 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      console.log('Income response:', data);
 
       if (response.ok) {
         setDisplayIncome(displayIncome + parseInt(salaryAmount));
@@ -673,6 +666,7 @@ export default function Dashboard() {
       const paymentAmountNumber = parseFloat(paymentAmount);
       if (isNaN(paymentAmountNumber)) return;
 
+
       try {
         const response = await fetch('/api/events?account_id=${user.account_id}', {
           method: 'POST',
@@ -697,8 +691,10 @@ export default function Dashboard() {
           return;
         }
 
+
         if (response.ok) {
           console.log('Payment created successfully.');
+
 
           const rule = new RRule({
             freq: getRRuleFreq(paymentOccurrence) ?? RRule.MONTHLY,
@@ -713,6 +709,7 @@ export default function Dashboard() {
             .split('T')[0];
 
 
+
           const occursToday = rule.all().some(date => {
             const ruleDateStr = date.toISOString().split('T')[0];
             return ruleDateStr === todayStr;
@@ -721,6 +718,7 @@ export default function Dashboard() {
 
           if (occursToday) {
             const budgetToUpdate = budgets.find(b => b.budget_id === paymentBudgetID);
+
 
             if (budgetToUpdate) {
               const updatedBudget = {
@@ -767,6 +765,7 @@ export default function Dashboard() {
         console.error('Failed to create payment:', error);
       }
     };
+
 
 
 
@@ -930,6 +929,41 @@ export default function Dashboard() {
       cutout: '70%',
     };
 
+  // START OF QUICK GLANCE AND RED FLAGS
+  function getQuickGlance(){
+    if (budgets.length == 1){
+      quickGlance.push("You have no custom budgets. Please add budgets in the dashboard!");
+    }
+    if(displayIncome == 0){
+      quickGlance.push("You have no income. Add income in the income tab!")
+    }
+    if (nearestPayments.length != 0){
+      quickGlance.push(`Your next payment is ${(nearestPayments[0].date).toDateString()} of $${nearestPayments[0].payment.payment} for ${nearestPayments[0].payment.event_name}.`);
+    }
+    if (budgets.length > 1){
+      const highestBudget = budgets.reduce((max, current) => {
+        return current.amount > max.amount ? current : max;
+      }, budgets[0]);
+      if (highestBudget.amount > 25){
+        quickGlance.push(`You still have $${highestBudget.amount} in ${highestBudget.name}!`);
+      }
+    }
+  }
+  getQuickGlance();
+
+  function getRedFlags(){
+    for(const b of budgets){
+      if(b.amount == 0){
+        redFlags.push(`Budget "${b.name}" is out of money!`);
+      }
+      if(b.amount < 25 && b.amount > 0){
+        redFlags.push(`Budget "${b.name}" is starting to run low!`);
+      }
+    }
+
+  }
+  getRedFlags();
+
 
     if (!isClient) {
       return null; // Don't render anything on the server side
@@ -950,37 +984,182 @@ export default function Dashboard() {
 
             </div>
           </div>
-          <div className="bg-white p-4 shadow-lg rounded-xl">
-            <div className="justify-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-              <div className="flex justify-center">
-                <button className="text-[#7c8cfd]" onClick={() => setActiveView('dashboard')}>Dashboard</button>
-              </div>
-              <div className="shadow-lg rounded-lg flex">
-                <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
-                  onClick={() => dashboardReturn("income")}>Income</button>
-                <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
-                  onClick={() => dashboardReturn("budget")}>Budget</button>
-                <button className="bg-blue-100 text-blue-400 flex justify-center w-full p-2 m-2 rounded-lg cursor-pointer"
-                  onClick={() => dashboardReturn("payment")}>Payment</button>
+
+          {activeView === 'dashboard' && (
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+              <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
+              <div>
+                {quickGlance.map((msg, index) => (
+                  <p
+                    key={index}
+                    className="text-gray-600 text-sm flex justify-center pt-2 pb-2" // Adds padding top and bottom
+                  >
+                    {msg}
+                  </p>
+                ))}
               </div>
             </div>
-            {/* Quick Glance and Red Flags Section */}
-            {activeView === 'dashboard' && (
-              <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-                <p className="text-[#7c8cfd] flex justify-center">Quick Glance</p>
-                <div> {quickGlance.map((msg, index) => (
-                  <p key={index} className="text-gray-600 text-sm flex justify-center">{msg}</p>
-                ))}
-                </div>
-              </div>
-            )}
+          )}
 
-            {activeView === 'dashboard' && (
-              <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
-                <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
-                <div className="shadow-lg rounded-lg flex">
-                  {/* <p className="bg-blue-100 text-blue-400 flex justify-center w-1/4 p-4 m-2 rounded-lg">{redPrice}</p> */}
-                  <p className="text-gray-600 text-sm flex justify-center w-full p-2 m-2 rounded-lg">{redFlags}</p>
+
+          {activeView === 'dashboard' && (
+            <div className="bg-gray-100 p-4 m-4 shadow-lg rounded-lg">
+              <p className="text-[#7c8cfd] flex justify-center">Red Flags</p>
+              <div> {redFlags.map((msg, index) => (
+                <p key={index} className="text-gray-600 text-sm flex justify-center pt-2 pb-2">{msg}</p>
+              ))}
+              </div>
+            </div>
+          )}
+          {/* Income Section */}
+          {activeView === 'income' && (
+            <div className="text-center bg-gray-100 p-4 m-2 shadow-lg rounded-lg ">
+              <form onSubmit={(e) => { e.preventDefault(); 
+                if (!salaryAmount.trim() || !/^-?\d+$/.test(salaryAmount.trim())) {
+                  alert("Please enter a valid integer salary.");
+                  return;
+                }
+                updateSalary(); 
+                }}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" title="This will add to the total salary, which will be dispersed every frequency that you choose amongst budgets"
+                  value="Update Salary" />
+                <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
+                  placeholder="$70,000" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} />
+                {/* Salary Occurrence Select */}
+                <select
+                  className="bg-white p-2 m-1 border rounded-lg text-blue-400"
+                  value={salaryOccurrence || ''}
+                  onChange={(e) => setSalaryOccurrence(e.target.value)}
+                >
+                  <option value="" disabled hidden>Select Occurrence</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+
+                {/* {salaryOccurrence === 'custom' && (
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-1/10 bg-white p-2 m-2 text-black"
+                    placeholder="1"
+                    value={customSalaryOccurrence}
+                    onChange={(e) => setCustomSalaryOccurrence(e.target.value)}
+                  />
+                )} */}
+              </form>
+              <form onSubmit={(e) => { e.preventDefault(); 
+                if (!newIncome.trim() || !/^-?\d+$/.test(newIncome.trim())) {
+                  alert("Please enter a valid integer income.");
+                  return;
+                }
+                addIncome(); }}>
+                <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer" title="This is a one time addition to your total balance."
+                  value="Add Income" />
+                <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
+                  placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
+              </form>
+              {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
+            </div>
+          )}
+
+          {/* Allocation Section */}
+          {/* {activeView === 'allocation' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              {incomeAlloc.map((alloc, index) => (
+                <div key={index} className="flex items-center bg-white p-2 shadow-lg rounded-xl w-full mb-4">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={(alloc * 100).toFixed(0)}
+                    onChange={(e) => {
+                      const newAlloc = [...incomeAlloc];
+                      newAlloc[index] = parseFloat(e.target.value) / 100 || 0;
+                      setIncomeAlloc(newAlloc);
+                    }}
+                    className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
+                  />
+                  <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">
+                    {index === 0 ? 'Disposable Income' : budgets[index - 1]?.name || ''}
+                  </p>
+                </div>
+              ))}
+
+              <p className={`mt-2 text-sm font-medium ${allocCheck ? 'text-green-600' : 'text-red-500'}`}>
+                Total: {(totalAlloc * 100).toFixed(2)}% {!allocCheck && '(must equal 100%)'}
+              </p>
+
+              <button
+                disabled={!allocCheck}
+                onClick={() => setActiveView('income')}
+                className={`mt-4 px-4 py-2 rounded ${
+                  allocCheck
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Save Allocation
+              </button>
+            </div>
+          )} */}
+
+
+          {/* Budget Section */}
+          {activeView === 'budget' && (
+            <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (
+                    !budgetName.trim() ||
+                    !budgetAmount.trim() ||
+                    !allocation.trim()
+                  ) {
+                    alert("Please fill out all fields before submitting.");
+                    return;
+                  }
+                  const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
+                  if (totalAllocation !== 100) {
+                    alert("Total allocation must equal 100%");
+                    return;
+                  }
+                  createBudget();
+                }}
+                className="flex flex-wrap justify-center items-center"
+              >
+                <div className="text-center mb-4">
+                  <input
+                    type="submit"
+                    title="The percentage will be the percentage that is allocated to each budget from the total salary."
+                    className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer`}
+                    value="Add Budget"
+                  />
+                  <input
+                    type="text"
+                    className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="Name"
+                    value={budgetName}
+                    onChange={(e) => setBudgetName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="$0"
+                    value={budgetAmount}
+                    onChange={(e) => setBudgetAmount(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
+                    placeholder="100%"
+                    value={allocation}
+                    onChange={(e) => setAllocation(e.target.value)}
+                  />
+
                 </div>
               </div>
             )}
@@ -999,130 +1178,47 @@ export default function Dashboard() {
                     value={salaryOccurrence || ''}
                     onChange={(e) => setSalaryOccurrence(e.target.value)}
                   >
-                    <option value="" disabled hidden>Select Occurrence</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-
-                </form>
-                <form onSubmit={(e) => { e.preventDefault(); addIncome(); }}>
-                  <input type="submit" className="bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer"
-                    value="Add Income" />
-                  <input type="text" className="w-1/3 p-2 m-2 bg-white text-gray-600 text-center"
-                    placeholder="$0" value={newIncome} onChange={(e) => setNewIncome(e.target.value)} />
-                </form>
-                {/* <button className="bg-blue-100 text-blue-400 text-center items-center p-2 m-2 rounded-lg cursor-pointer" onClick={() => setActiveView('allocation')}>Allocation</button> */}
-              </div>
-            )}
-
-            {/* Budget Section */}
-            {activeView === 'budget' && (
-              <div className="bg-gray-100 p-4 m-2 shadow-lg rounded-lg">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const totalAllocation = budgets.reduce((total, budget) => total + budget.allocation, 0);
-                    if (totalAllocation !== 100) {
-                      alert("Total allocation must equal 100%");
-                      return;
-                    }
-                    createBudget();
-                  }}
-                  className="flex flex-wrap justify-center items-center"
-                >
-                  <div className="text-center mb-4">
-                    <input
-                      type="submit"
-                      title="The percentage will be the percentage that is allocated to each budget from the total salary."
-                      className={`bg-blue-100 text-blue-400 p-2 m-2 rounded-lg cursor-pointer ${budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome
-                        ? 'opacity-50 cursor-not-allowed'
-                        : ''
-                        }`}
-                      value="Add Budget"
-                      disabled={budgets.reduce((sum, b) => sum + b.amount, 0) >= displayIncome}
-                    />
-                    <input
-                      type="text"
-                      className="max-w-1/2 p-2 m-2 bg-white text-gray-600 text-center"
-                      placeholder="Name"
-                      value={budgetName}
-                      onChange={(e) => setBudgetName(e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
-                      placeholder="$0"
-                      value={budgetAmount}
-                      onChange={(e) => setBudgetAmount(e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      className="max-w-1/4 p-2 m-2 bg-white text-gray-600 text-center"
-                      placeholder="100%"
-                      value={allocation}
-                      onChange={(e) => setAllocation(e.target.value)}
-                    />
-                  </div>
-                </form>
-                <div>
-                  {budgets.map((budget, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between bg-white p-2 shadow-lg rounded-xl w-full mb-4"
-                    >
-                      <div className="flex items-center">
-                        <input
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={isNaN(budget.amount) ? '' : budget.amount}
-                          onChange={(e) => {
-                            const newBudgets = [...budgets];
-                            newBudgets[index].amount = parseFloat(e.target.value);
-                            setBudgets(newBudgets);
-                          }}
-                          className="w-24 bg-blue-100 text-blue-400 p-2 mr-6 rounded-lg"
-                        />
-
-                        <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg">{budget.name}</p>
-                      </div>
-
-                      {/* Input for updating budget allocation */}
-                      <div className="flex justify-end flex-grow">
-                        <input
-                          type="number"
-                          step="1"
-                          min="0"
-                          max="100"
-                          value={isNaN(budget.allocation) ? '' : budget.allocation}
-                          onChange={(e) => {
-                            const newAlloc = [...budgets];
-                            newAlloc[index].allocation = parseFloat(e.target.value);
-                            setBudgets(newAlloc);
-                          }}
-                          className="w-24 bg-blue-100 text-blue-400 p-2 rounded-lg"
-                        />
-                      </div>
-
-                      {/* Delete budget */}
-                      <button
-                        onClick={() => deleteBudget(budget.budget_id)}
-                        title="This button deletes the budget entry"
-                        className="text-red-500 px-2 py-1 rounded hover:bg-red-100 cursor-pointer"
-                      >
-                        ✕
-                      </button>
+                    <div className="flex items-center">
+                    <div className="relative w-24">
+                      <span className="absolute inset-y-0 left-2 flex items-center text-blue-400">$</span>
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={isNaN(budget.amount) ? '' : budget.amount}
+                        onChange={(e) => {
+                          const newBudgets = [...budgets];
+                          newBudgets[index].amount = parseFloat(e.target.value);
+                          setBudgets(newBudgets);
+                        }}
+                        className="pl-5 w-full bg-blue-100 text-blue-400 p-2 rounded-lg"
+                      />
                     </div>
-                  ))}
-                  {/* Update Allocations Button */}
-                  {!isAllocationValid && (
-                    <p className="text-red-500 text-sm text-center">
-                      Total allocation must equal 100%.
-                    </p>
-                  )}
+                    <p className="text-blue-400 text-md p-2 w-1/2 rounded-lg text-center">{budget.name}</p>
+                    </div>
+
+                    {/* Input for updating budget allocation */}
+                    <div className="flex justify-end flex-grow">
+                    <div className="relative w-24">
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        max="100"
+                        value={isNaN(budget.allocation) ? '' : budget.allocation}
+                        onChange={(e) => {
+                          const newAlloc = [...budgets];
+                          newAlloc[index].allocation = parseFloat(e.target.value);
+                          setBudgets(newAlloc);
+                        }}
+                        className="pr-5 w-full bg-blue-100 text-blue-400 p-2 rounded-lg"
+                      />
+                      <span className="absolute inset-y-0 right-2 flex items-center text-blue-400">
+                        %
+                      </span>
+                    </div>
+                  </div>
+
 
                   <div className="flex justify-center mt-4">
                     <button
