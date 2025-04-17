@@ -594,7 +594,7 @@ export default function Dashboard() {
     nextYear.setFullYear(nextYear.getFullYear() + 1);
     return new Date(nextYear.setHours(0, 0, 0, 0)).toISOString().split('T')[0];
   });
-  
+
     useEffect(() => {
       async function fetchPayments() {
         if (!user) return;
@@ -662,7 +662,7 @@ export default function Dashboard() {
         try {
           data = await response.json();
         } catch (err) {
-          console.error("Server returned non-JSON response");
+          console.error("Server returned non-JSON response:", err);
           return;
         }
 
